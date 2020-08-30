@@ -112,7 +112,7 @@ def test(epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            recon_batch, mu, logvar = model(data)
+            recon_batch, mu, logvar = model(args, data)
             test_loss += loss_function(recon_batch, data, mu, logvar).item()
             if i == 0:
                 n = min(data.size(0), 8)
