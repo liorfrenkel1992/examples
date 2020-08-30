@@ -9,6 +9,8 @@ from torchvision.utils import save_image
 
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
+parser.add_argument('--use_UT', action='store_true', default=False,
+                    help='the model uses unscented transformation for sampling')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--epochs', type=int, default=10, metavar='N',
@@ -50,18 +52,19 @@ class VAE(nn.Module):
         h1 = F.relu(self.fc1(x))
         return self.fc21(h1), self.fc22(h1)
 
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(std)
+    def reparameterize(self, args, mu, logvar):
+        if not args.use_UT:
+            std = torch.exp(0.5*logvar)
+            eps = torch.randn_like(std)
         return mu + eps*std
 
     def decode(self, z):
         h3 = F.relu(self.fc3(z))
         return torch.sigmoid(self.fc4(h3))
 
-    def forward(self, x):
+    def forward(self, args, x):
         mu, logvar = self.encode(x.view(-1, 784))
-        z = self.reparameterize(mu, logvar)
+        z = self.reparameterize(args, mu, logvar)
         return self.decode(z), mu, logvar
 
 
@@ -82,13 +85,13 @@ def loss_function(recon_x, x, mu, logvar):
     return BCE + KLD
 
 
-def train(epoch):
+def train(args, epoch):
     model.train()
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        recon_batch, mu, logvar = model(data)
+        recon_batch, mu, logvar = model(args, data)
         loss = loss_function(recon_batch, data, mu, logvar)
         loss.backward()
         train_loss += loss.item()
@@ -123,7 +126,7 @@ def test(epoch):
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        train(epoch)
+        train(args, epoch)
         test(epoch)
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
