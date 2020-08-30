@@ -52,10 +52,51 @@ class VAE(nn.Module):
         h1 = F.relu(self.fc1(x))
         return self.fc21(h1), self.fc22(h1)
 
-    def reparameterize(self, args, mu, logvar):
-        if not args.use_UT:
-            std = torch.exp(0.5*logvar)
-            eps = torch.randn_like(std)
+    def svdsqrtm(x, eps=1e-15):
+        """Return the matrix square root of x calculating using the svd.
+    
+        Set singular values < eps to 0.
+        This prevents numerical errors from making sqrtm(x) complex
+        (small eigenvalues of x accidently negative)."""
+        u, s, v = torch.svd(x)
+        s_notneg = torch.zeros_like(s)
+        for i in range(s.size):
+            if s[i] > eps:
+                s_notneg[i] = s[i]
+
+        return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_pos)), torch.transpose(v)))
+    
+    def unscented(self, mu, logvar):
+        """For a vector mu of length N with covariance matrix logvar,
+        form 2N sigma points used for taking the unscented transform."""
+        mu = mu.view(-1) # Force shape
+        N = mu.shape[1]
+        varsqrt = scale * svdsqrtm(N * logvar)
+        x_sigma = []
+        
+        for i in xrange(N):
+            x_sigma.append(mu + varsqrt[:, i])
+
+        for i in xrange(N):
+            x_sigma.append(mu - varsqrt[:, i])
+
+        return x_sigma
+        
+    def unscented_mu_cov(x_sigma):
+    """Approximate mean, covariance from 2N sigma points transformed through
+    an arbitrary non-linear transformation.
+    Returns a flattened 1d array for x."""
+    N = len(x_sigma)
+    pts = torch.tensor(x_sigma)
+
+    x_mu = torch.mean(pts, axis=0)
+    diff = pts - x_mu
+    x_cov = torch.dot(diff.T, diff) / N
+    return x_mu, x_cov
+  
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(std) 
         return mu + eps*std
 
     def decode(self, z):
@@ -64,7 +105,10 @@ class VAE(nn.Module):
 
     def forward(self, args, x):
         mu, logvar = self.encode(x.view(-1, 784))
-        z = self.reparameterize(args, mu, logvar)
+        if args.use_UT:
+            z = self.unscented(mu, logvar)
+        else:
+            z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
 
 
