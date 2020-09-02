@@ -56,13 +56,11 @@ class VAE(nn.Module):
         return self.fc21(h1), self.fc22(h1)
 
     def svdsqrtm(x, eps=1e-15):
-        """
-        Return the matrix square root of x calculating using the svd.
+        #Return the matrix square root of x calculating using the svd.
     
-        Set singular values < eps to 0.
-        This prevents numerical errors from making sqrtm(x) complex
-        (small eigenvalues of x accidently negative).
-        """
+        #Set singular values < eps to 0.
+        #This prevents numerical errors from making sqrtm(x) complex
+        #(small eigenvalues of x accidently negative).
         u, s, v = torch.svd(x)
         s_notneg = torch.zeros_like(s)
         for i in range(s.size):
@@ -72,10 +70,8 @@ class VAE(nn.Module):
         return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_pos)), torch.transpose(v)))
     
     def unscented(self, mu, logvar):
-        """
-        For a vector mu of length N with covariance matrix logvar,
-        form 2N sigma points used for taking the unscented transform.
-        """
+        #For a vector mu of length N with covariance matrix logvar,
+        #form 2N sigma points used for taking the unscented transform.
         mu = mu.view(-1) # Force shape
         N = mu.shape[1]
         varsqrt = scale * svdsqrtm(N * logvar)
@@ -90,11 +86,9 @@ class VAE(nn.Module):
         return x_sigma
         
     def unscented_mu_cov(x_sigma):
-    """
-    Approximate mean, covariance from 2N sigma points transformed through
-    an arbitrary non-linear transformation.
-    Returns a flattened 1d array for x.
-    """
+    #Approximate mean, covariance from 2N sigma points transformed through
+    #an arbitrary non-linear transformation.
+    #Returns a flattened 1d array for x.
     N = len(x_sigma)
     pts = torch.tensor(x_sigma)
 
