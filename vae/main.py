@@ -39,13 +39,16 @@ test_loader = torch.utils.data.DataLoader(
 
 
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, args):
         super(VAE, self).__init__()
 
         self.fc1 = nn.Linear(784, 400)
         self.fc21 = nn.Linear(400, 20)
         self.fc22 = nn.Linear(400, 20)
-        self.fc3 = nn.Linear(20, 400)
+        if args.use_UT:
+            self.fc3 = nn.Linear(20, 400)
+        else:
+            self.fc3 = nn.Linear(40, 400)
         self.fc4 = nn.Linear(400, 784)
 
     def encode(self, x):
@@ -107,12 +110,13 @@ class VAE(nn.Module):
         mu, logvar = self.encode(x.view(-1, 784))
         if args.use_UT:
             z = self.unscented(mu, logvar)
+            
         else:
             z = self.reparameterize(mu, logvar)
         return self.decode(z), mu, logvar
 
 
-model = VAE().to(device)
+model = VAE(args).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 
