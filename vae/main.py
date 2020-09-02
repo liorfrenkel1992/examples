@@ -91,7 +91,7 @@ class VAE(nn.Module):
     #Returns a flattened 1d array for x.
     N = len(x_sigma)
     pts = torch.tensor(x_sigma)
-
+    
     x_mu = torch.mean(pts, axis=0)
     diff = pts - x_mu
     x_cov = torch.dot(diff.T, diff) / N
