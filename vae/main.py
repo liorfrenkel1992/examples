@@ -86,16 +86,16 @@ class VAE(nn.Module):
         return x_sigma
         
     def unscented_mu_cov(x_sigma):
-    #Approximate mean, covariance from 2N sigma points transformed through
-    #an arbitrary non-linear transformation.
-    #Returns a flattened 1d array for x.
-    N = len(x_sigma)
-    pts = torch.tensor(x_sigma)
-    
-    x_mu = torch.mean(pts, axis=0)
-    diff = pts - x_mu
-    x_cov = torch.dot(diff.T, diff) / N
-    return x_mu, x_cov
+        #Approximate mean, covariance from 2N sigma points transformed through
+        #an arbitrary non-linear transformation.
+        #Returns a flattened 1d array for x.
+        N = len(x_sigma)
+        pts = torch.tensor(x_sigma)
+
+        x_mu = torch.mean(pts, axis=0)
+        diff = pts - x_mu
+        x_cov = torch.dot(diff.T, diff) / N
+        return x_mu, x_cov
   
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5*logvar)
