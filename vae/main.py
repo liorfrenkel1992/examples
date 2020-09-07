@@ -7,6 +7,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
+import torch.distributions as tdist
 
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
@@ -65,7 +66,7 @@ class VAE(nn.Module):
         h3 = F.relu(self.fc3(z))
         return torch.sigmoid(self.fc4(h3))
       
-      def svdsqrtm(x, eps=1e-15):
+      def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
     
         #Set singular values < eps to 0.
@@ -84,7 +85,7 @@ class VAE(nn.Module):
         #form 2N sigma points used for taking the unscented transform.
         mu = mu.view(-1) # Force shape
         N = mu.shape[1]
-        varsqrt = scale * svdsqrtm(N * logvar)
+        varsqrt = scale * self.svdsqrtm(N * logvar)
         x_sigma = []
         
         for i in xrange(N):
@@ -95,20 +96,27 @@ class VAE(nn.Module):
 
         return x_sigma
       
-    def norm_dist(x, mu, var):
+    def norm_dist(self, x, mu, var):
         return (1/(var*torch.sqrt(2*math.pi())))*torch.exp(-(1/(2*var))*(x - mu)^2)
     
-    def sample_loss(z, mu_z, var_z, x, mu_x, var_x):
+    def sample_loss(self, z, mu_z, var_z):
         K = z.shape[0]
+        with torch.no_grad():
+            recon_x = self.decode(z)
+        mu_x = torch.mean(recon_x, dim=(2,3))
+        std_x = torch.std(recon_x, dim=(2,3))
+        
+        q_z_x = tdist.Normal(torch.tensor(mu_z), torch.tensor(var_z))
+        p_z = tdist.Normal(torch.tensor([), torch.tensor(var_z))
+        p_x_z = tdist.Normal(torch.tensor(mu_x), torch.tensor(var_x))
         
         for sample in z:
-            q_z_x = norm_dist(sample, mu_z, var_z)
-            
-            p_x_z = norm_dist(sample, mu_z, var_z)
+            #q_z_x = self.norm_dist(sample, mu_z, var_z)
+            #p_x_z = self.norm_dist(sample, mu_z, var_z)
         
         sampled_ELBO = torch.log(
         
-    def unscented_mu_cov(x_sigma):
+    def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
         #an arbitrary non-linear transformation.
         #Returns a flattened 1d array for x.
@@ -121,13 +129,12 @@ class VAE(nn.Module):
         return x_mu, x_cov
   
 
-    def forward(self, args, x):
+    def forward(self, args, x, istrain=True):
         mu, logvar = self.encode(x.view(-1, 784))
-        if args.use_UT:
-            z = self.unscented(mu, logvar)
-            
-        else:
+        if istrain:
             z = self.reparameterize(mu, logvar)
+        else:
+            z = self.unscented(mu, logvar)
         return self.decode(z), mu, logvar
 
 
@@ -175,7 +182,7 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            recon_batch, mu, logvar = model(args, data)
+            recon_batch, mu, logvar = model(args, data, istrain=False)
             test_loss += loss_function(recon_batch, data, mu, logvar).item()
             if i == 0:
                 n = min(data.size(0), 8)
@@ -189,7 +196,7 @@ def test(args, epoch):
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        #train(args, epoch)
+        train(args, epoch)
         test(args, epoch)
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
