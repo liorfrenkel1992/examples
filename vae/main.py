@@ -47,11 +47,9 @@ class VAE(nn.Module):
         self.fc1 = nn.Linear(784, 400)
         self.fc21 = nn.Linear(400, 20)
         self.fc22 = nn.Linear(400, 20)
-        if args.use_UT:
-            self.fc3 = nn.Linear(20, 400)
-        else:
-            self.fc3 = nn.Linear(40, 400)
-        self.fc4 = nn.Linear(400, 784)
+        self.fc3 = nn.Linear(40, 400)
+        self.fc41 = nn.Linear(400, 784)
+        self.fc42 = nn.Linear(400, 784)
 
     def encode(self, x):
         h1 = F.relu(self.fc1(x))
@@ -62,9 +60,12 @@ class VAE(nn.Module):
         eps = torch.randn_like(std) 
         return mu + eps*std
 
-    def decode(self, z):
+    def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
-        return torch.sigmoid(self.fc4(h3))
+        if istrain:
+            return torch.sigmoid(self.fc4(h3))
+        else:
+            return self.fc41(h3), self.fc42(h3)
       
       def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -102,17 +103,15 @@ class VAE(nn.Module):
     def sample_loss(self, z, mu_z, var_z):
         K = z.shape[0]
         with torch.no_grad():
-            recon_x = self.decode(z)
-        mu_x = torch.mean(recon_x, dim=(2,3))
-        std_x = torch.std(recon_x, dim=(2,3))
+            mu_x, std_x = self.decode(z)
         
-        q_z_x = tdist.Normal(torch.tensor(mu_z), torch.tensor(var_z))
-        p_z = tdist.Normal(torch.tensor([), torch.tensor(var_z))
-        p_x_z = tdist.Normal(torch.tensor(mu_x), torch.tensor(var_x))
+        #q_z_x = tdist.Normal(torch.tensor(mu_z), torch.tensor(var_z))
+        #p_x_z = tdist.Normal(torch.tensor(mu_x), torch.tensor(var_x))
+        #p_z = tdist.Normal(torch.tensor([0.0]), torch.tensor([1.0]))
         
         for sample in z:
-            #q_z_x = self.norm_dist(sample, mu_z, var_z)
-            #p_x_z = self.norm_dist(sample, mu_z, var_z)
+            q_z_x = self.norm_dist(sample, mu_z, var_z)
+            p_x_z = self.norm_dist(sample, mu_z, var_z)
         
         sampled_ELBO = torch.log(
         
@@ -135,7 +134,7 @@ class VAE(nn.Module):
             z = self.reparameterize(mu, logvar)
         else:
             z = self.unscented(mu, logvar)
-        return self.decode(z), mu, logvar
+        return self.decode(z, istrain=istrain), mu, logvar
 
 
 model = VAE(args).to(device)
