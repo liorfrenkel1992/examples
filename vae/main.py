@@ -1,5 +1,6 @@
 from __future__ import print_function
 import argparse
+import math
 import torch
 import torch.utils.data
 from torch import nn, optim
@@ -54,8 +55,17 @@ class VAE(nn.Module):
     def encode(self, x):
         h1 = F.relu(self.fc1(x))
         return self.fc21(h1), self.fc22(h1)
+        
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(std) 
+        return mu + eps*std
 
-    def svdsqrtm(x, eps=1e-15):
+    def decode(self, z):
+        h3 = F.relu(self.fc3(z))
+        return torch.sigmoid(self.fc4(h3))
+      
+      def svdsqrtm(x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
     
         #Set singular values < eps to 0.
@@ -84,6 +94,19 @@ class VAE(nn.Module):
             x_sigma.append(mu - varsqrt[:, i])
 
         return x_sigma
+      
+    def norm_dist(x, mu, var):
+        return (1/(var*torch.sqrt(2*math.pi())))*torch.exp(-(1/(2*var))*(x - mu)^2)
+    
+    def sample_loss(z, mu_z, var_z, x, mu_x, var_x):
+        K = z.shape[0]
+        
+        for sample in z:
+            q_z_x = norm_dist(sample, mu_z, var_z)
+            
+            p_x_z = norm_dist(sample, mu_z, var_z)
+        
+        sampled_ELBO = torch.log(
         
     def unscented_mu_cov(x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
@@ -97,14 +120,6 @@ class VAE(nn.Module):
         x_cov = torch.dot(diff.T, diff) / N
         return x_mu, x_cov
   
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(std) 
-        return mu + eps*std
-
-    def decode(self, z):
-        h3 = F.relu(self.fc3(z))
-        return torch.sigmoid(self.fc4(h3))
 
     def forward(self, args, x):
         mu, logvar = self.encode(x.view(-1, 784))
@@ -154,7 +169,7 @@ def train(args, epoch):
           epoch, train_loss / len(train_loader.dataset)))
 
 
-def test(epoch):
+def test(args, epoch):
     model.eval()
     test_loss = 0
     with torch.no_grad():
@@ -174,8 +189,8 @@ def test(epoch):
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
-        test(epoch)
+        #train(args, epoch)
+        test(args, epoch)
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
             sample = model.decode(sample).cpu()
