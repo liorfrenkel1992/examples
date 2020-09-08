@@ -100,20 +100,25 @@ class VAE(nn.Module):
     def norm_dist(self, x, mu, var):
         return (1/(var*torch.sqrt(2*math.pi())))*torch.exp(-(1/(2*var))*(x - mu)^2)
     
-    def sample_loss(self, z, mu_z, var_z):
+    def sample_loss(self, z, mu_z, var_z, x):
         K = z.shape[0]
         with torch.no_grad():
-            mu_x, std_x = self.decode(z)
+            mu_x, var_x = self.decode(z)
         
         #q_z_x = tdist.Normal(torch.tensor(mu_z), torch.tensor(var_z))
         #p_x_z = tdist.Normal(torch.tensor(mu_x), torch.tensor(var_x))
         #p_z = tdist.Normal(torch.tensor([0.0]), torch.tensor([1.0]))
         
         for sample in z:
-            q_z_x = self.norm_dist(sample, mu_z, var_z)
-            p_x_z = self.norm_dist(sample, mu_z, var_z)
-        
-        sampled_ELBO = torch.log(
+            #q_z_x = self.norm_dist(sample, mu_z, var_z)
+            q_z_x = (1/(var_z*torch.sqrt(2*math.pi())))*torch.exp(-1/2)
+            print(q_z_x.shape)
+            p_x_z = self.norm_dist(x, mu_x, var_x)
+            print(p_x_z.shape)
+            p_z = self.norm_dist(sample, 0, 1)
+            print(p_x_z.shape)
+                 
+        sampled_ELBO = torch.log((1/K)*torch.sum((p_x_z*p_z)/q_z_x)
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
@@ -160,7 +165,7 @@ def train(args, epoch):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        recon_batch, mu, logvar = model(args, data)
+        recon_batch, mu, logvar = model(args, data, istrain=False)
         loss = loss_function(recon_batch, data, mu, logvar)
         loss.backward()
         train_loss += loss.item()
