@@ -109,16 +109,14 @@ class VAE(nn.Module):
         #p_x_z = tdist.Normal(torch.tensor(mu_x), torch.tensor(var_x))
         #p_z = tdist.Normal(torch.tensor([0.0]), torch.tensor([1.0]))
         
+        pq_sum = []
         for sample in z:
-            #q_z_x = self.norm_dist(sample, mu_z, var_z)
-            q_z_x = (1/(var_z*torch.sqrt(2*math.pi())))*torch.exp(-1/2)
-            print(q_z_x.shape)
+            q_z_x = self.norm_dist(sample, mu_z, var_z)
             p_x_z = self.norm_dist(x, mu_x, var_x)
-            print(p_x_z.shape)
-            p_z = self.norm_dist(sample, 0, 1)
-            print(p_x_z.shape)
+            p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
+            pq_sum.append((p_x_z*p_z)/q_z_x)
                  
-        sampled_ELBO = torch.log((1/K)*torch.sum((p_x_z*p_z)/q_z_x)
+        sampled_ELBO = torch.log((1/K)*torch.sum(pq_sum)
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
