@@ -164,12 +164,12 @@ def train(args, epoch):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        mu, logvar = self.encode(x.view(-1, 784))
+        mu, logvar = model.encode(x.view(-1, 784))
         z = self.unscented(mu, logvar)
         for sample in z:
-            recon_batch = self.decode(sample, istrain=istrain)
+            recon_batch = model.decode(sample, istrain=istrain)
             #recon_batch, mu, logvar = model(args, data, istrain=False)
-            loss = self.sample_loss(recon_batch, z, mu, logvar)
+            loss = model.sample_loss(recon_batch, z, mu, logvar)
             loss.backward()
             train_loss += loss.item()
             optimizer.step()
@@ -189,13 +189,12 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            mu, logvar = self.encode(x.view(-1, 784))
+            mu, logvar = model.encode(x.view(-1, 784))
             z = self.unscented(mu, logvar)
             for sample in z:
-                recon_batch = self.decode(sample, istrain=istrain)
+                recon_batch = model.decode(sample, istrain=istrain)
                 #recon_batch, mu, logvar = model(args, data, istrain=False)
-                loss = self.sample_loss(recon_batch, z, mu, logvar)
-                test_loss += self.sample_loss(recon_batch, z, mu, logvar).item()
+                test_loss += model.sample_loss(recon_batch, z, mu, logvar).item()
             if i == 0:
                 n = min(data.size(0), 8)
                 comparison = torch.cat([data[:n],
