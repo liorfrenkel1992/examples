@@ -164,7 +164,7 @@ def train(args, epoch):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        mu, logvar = model.encode(x.view(-1, 784))
+        mu, logvar = model.encode(data.view(-1, 784))
         z = self.unscented(mu, logvar)
         for sample in z:
             recon_batch = model.decode(sample, istrain=istrain)
@@ -189,7 +189,7 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            mu, logvar = model.encode(x.view(-1, 784))
+            mu, logvar = model.encode(data.view(-1, 784))
             z = self.unscented(mu, logvar)
             for sample in z:
                 recon_batch = model.decode(sample, istrain=istrain)
