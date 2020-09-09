@@ -86,6 +86,7 @@ class VAE(nn.Module):
         #form 2N sigma points used for taking the unscented transform.
         mu = mu.view(-1) # Force shape
         N = mu.shape[0]
+        scale = 1.0
         varsqrt = scale * self.svdsqrtm(N * logvar)
         x_sigma = []
         
