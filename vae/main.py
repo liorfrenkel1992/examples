@@ -116,8 +116,10 @@ class VAE(nn.Module):
         
         pq_sum = []
         for sample in z:
+            with torch.no_grad():
+                mu_x, var_x = self.decode(sample)
             q_z_x = self.norm_dist(sample, mu_z, var_z)
-            p_x_z = self.norm_dist(x, mu_x, var_x)
+            p_x_z = self.norm_dist(x, mu_x.detach(), var_x.detach())
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
             pq_sum.append((p_x_z*p_z)/q_z_x)
                  
