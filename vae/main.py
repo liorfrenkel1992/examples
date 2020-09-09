@@ -76,11 +76,11 @@ class VAE(nn.Module):
         u, s, v = torch.svd(x)
         s_notneg = torch.zeros_like(s)
         print(s.shape)
-        for i in range(s.size):
+        for i in range(s.shape[0]):
             if s[i] > eps:
                 s_notneg[i] = s[i]
 
-        return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_pos)), torch.transpose(v)))
+        return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_notneg)), torch.transpose(v)))
     
     def unscented(self, mu, logvar):
         #For a vector mu of length N with covariance matrix logvar,
