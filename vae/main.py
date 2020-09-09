@@ -75,6 +75,7 @@ class VAE(nn.Module):
         #(small eigenvalues of x accidently negative).
         u, s, v = torch.svd(x)
         s_notneg = torch.zeros_like(s)
+        print(s.shpae)
         for i in range(s.size):
             if s[i] > eps:
                 s_notneg[i] = s[i]
