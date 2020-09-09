@@ -89,6 +89,7 @@ class VAE(nn.Module):
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         varsqrt = math.sqrt(N)*torch.diag(logvar)
+        print(varsqrt.shape)
         x_sigma = []
         
         for i in range(N):
