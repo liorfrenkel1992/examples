@@ -85,8 +85,7 @@ class VAE(nn.Module):
         #For a vector mu of length N with covariance matrix logvar,
         #form 2N sigma points used for taking the unscented transform.
         mu = mu.view(-1) # Force shape
-        print(mu.shape)
-        N = mu.shape[1]
+        N = mu.shape[0]
         varsqrt = scale * self.svdsqrtm(N * logvar)
         x_sigma = []
         
