@@ -175,7 +175,7 @@ def train(args, epoch, istrain=True):
         for sample in z:
             recon_batch = model.decode(sample, istrain=istrain)
             #recon_batch, mu, logvar = model(args, data, istrain=False)
-            loss = model.sample_loss(recon_batch, z, mu, logvar)
+            loss = model.sample_loss(recon_batch, z, mu, logvar, istrain=istrain)
             loss.backward()
             train_loss += loss.item()
             optimizer.step()
@@ -200,7 +200,7 @@ def test(args, epoch, istrain = True):
             for sample in z:
                 recon_batch = model.decode(sample, istrain=istrain)
                 #recon_batch, mu, logvar = model(args, data, istrain=False)
-                test_loss += model.sample_loss(recon_batch, z, mu, logvar).item()
+                test_loss += model.sample_loss(recon_batch, z, mu, logvar, istrain=istrain).item()
             if i == 0:
                 n = min(data.size(0), 8)
                 comparison = torch.cat([data[:n],
