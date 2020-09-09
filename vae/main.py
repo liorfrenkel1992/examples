@@ -75,7 +75,6 @@ class VAE(nn.Module):
         #(small eigenvalues of x accidently negative).
         u, s, v = torch.svd(x)
         s_notneg = torch.zeros_like(s)
-        print(s.shape)
         for i in range(s.shape[0]):
             if s[i] > eps:
                 s_notneg[i] = s[i]
@@ -87,8 +86,9 @@ class VAE(nn.Module):
         #form 2N sigma points used for taking the unscented transform.
         mu = mu.view(-1) # Force shape
         N = mu.shape[0]
-        scale = 1.0
-        varsqrt = scale * self.svdsqrtm(N * logvar)
+        #scale = 1.0
+        #varsqrt = scale * self.svdsqrtm(N * logvar)
+        varsqrt = torch.sqrt(N)*torch.diag(logvar)
         x_sigma = []
         
         for i in xrange(N):
