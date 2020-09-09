@@ -164,7 +164,7 @@ def loss_function(recon_x, x, mu, logvar):
     return BCE + KLD
 
 
-def train(args, epoch):
+def train(args, epoch, istrain=True):
     model.train()
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
@@ -189,7 +189,7 @@ def train(args, epoch):
           epoch, train_loss / len(train_loader.dataset)))
 
 
-def test(args, epoch):
+def test(args, epoch, istrain = True):
     model.eval()
     test_loss = 0
     with torch.no_grad():
@@ -213,8 +213,8 @@ def test(args, epoch):
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
-        test(args, epoch)
+        train(args, epoch, istrain=False)
+        test(args, epoch, istrain=False)
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
             sample = model.decode(sample).cpu()
