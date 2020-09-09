@@ -65,7 +65,7 @@ class VAE(nn.Module):
         if istrain:
             return torch.sigmoid(self.fc4(h3))
         else:
-            return self.fc41(h3), self.fc42(h3)
+            return torch.sigmoid(self.fc41(h3)), torch.sigmoid(self.fc42(h3))
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -109,13 +109,13 @@ class VAE(nn.Module):
         return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k))))* \
                 torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 0, 1), torch.inverse(Epsilon)), (x - mu)))
     
-    def sample_loss(self, x, z, mu_z, var_z):
+    def sample_loss(self, x, z, mu_z, var_z, istrain=True):
         K = len(z)       
         pq_sum = []
         
         for sample in z:
             with torch.no_grad():
-                mu_x, var_x = self.decode(sample)
+                mu_x, var_x = self.decode(sample, istrain=istrain)
             q_z_x = self.norm_dist(sample, mu_z, var_z)
             p_x_z = self.norm_dist(x, mu_x.detach(), var_x.detach())
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
