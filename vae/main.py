@@ -67,7 +67,7 @@ class VAE(nn.Module):
         else:
             return self.fc41(h3), self.fc42(h3)
       
-      def svdsqrtm(self, x, eps=1e-15):
+    def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
     
         #Set singular values < eps to 0.
