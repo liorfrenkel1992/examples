@@ -80,7 +80,7 @@ class VAE(nn.Module):
             if s[i] > eps:
                 s_notneg[i] = s[i]
 
-        return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_notneg)), torch.transpose(v)))
+        return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_notneg)), torch.transpose(v, 0, 1)))
     
     def unscented(self, mu, logvar):
         #For a vector mu of length N with covariance matrix logvar,
@@ -103,7 +103,7 @@ class VAE(nn.Module):
         k = len(x)
         Epsilon = torch.diag(var)
         return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k))))* \
-                torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose(x - mu), torch.inverse(Epsilon)), (x - mu)))
+                torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 0, 1), torch.inverse(Epsilon)), (x - mu)))
     
     def sample_loss(self, x, z, mu_z, var_z):
         K = len(z)
