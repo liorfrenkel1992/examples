@@ -115,7 +115,7 @@ class VAE(nn.Module):
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
             pq_sum.append((p_x_z*p_z)/q_z_x)
                  
-        return sampled_ELBO = -torch.max(torch.log((1/K)*torch.sum(pq_sum))
+        return torch.max(torch.log((1/K)*torch.sum(pq_sum)))
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
