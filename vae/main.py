@@ -47,7 +47,7 @@ class VAE(nn.Module):
         self.fc1 = nn.Linear(784, 400)
         self.fc21 = nn.Linear(400, 20)
         self.fc22 = nn.Linear(400, 20)
-        self.fc3 = nn.Linear(40, 400)
+        self.fc3 = nn.Linear(20, 400)
         self.fc41 = nn.Linear(400, 784)
         self.fc42 = nn.Linear(400, 784)
 
@@ -98,16 +98,15 @@ class VAE(nn.Module):
         return x_sigma
       
     def norm_dist(self, x, mu, var):
-        return (1/(var*torch.sqrt(2*math.pi())))*torch.exp(-(1/(2*var))*(x - mu)^2)
+        k = len(x)
+        Epsilon = torch.diag(var)
+        return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k)))* \
+                torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose(x - mu), torch.inverse(Epsilon)), (x - mu))
     
-    def sample_loss(self, z, mu_z, var_z, x):
-        K = z.shape[0]
+    def sample_loss(self, x, z, mu_z, var_z):
+        K = len(z)
         with torch.no_grad():
             mu_x, var_x = self.decode(z)
-        
-        #q_z_x = tdist.Normal(torch.tensor(mu_z), torch.tensor(var_z))
-        #p_x_z = tdist.Normal(torch.tensor(mu_x), torch.tensor(var_x))
-        #p_z = tdist.Normal(torch.tensor([0.0]), torch.tensor([1.0]))
         
         pq_sum = []
         for sample in z:
@@ -116,7 +115,7 @@ class VAE(nn.Module):
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
             pq_sum.append((p_x_z*p_z)/q_z_x)
                  
-        sampled_ELBO = torch.log((1/K)*torch.sum(pq_sum)
+        return sampled_ELBO = -torch.max(torch.log((1/K)*torch.sum(pq_sum))
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
@@ -137,7 +136,9 @@ class VAE(nn.Module):
             z = self.reparameterize(mu, logvar)
         else:
             z = self.unscented(mu, logvar)
-        return self.decode(z, istrain=istrain), mu, logvar
+            for sample in z:
+                recon_x = self.decode(sample, istrain=istrain)
+        return recon_x, mu, logvar, z
 
 
 model = VAE(args).to(device)
@@ -163,11 +164,15 @@ def train(args, epoch):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        recon_batch, mu, logvar = model(args, data, istrain=False)
-        loss = loss_function(recon_batch, data, mu, logvar)
-        loss.backward()
-        train_loss += loss.item()
-        optimizer.step()
+        mu, logvar = self.encode(x.view(-1, 784))
+        z = self.unscented(mu, logvar)
+        for sample in z:
+            recon_batch = self.decode(sample, istrain=istrain)
+            #recon_batch, mu, logvar = model(args, data, istrain=False)
+            loss = self.sample_loss(recon_batch, z, mu, logvar)
+            loss.backward()
+            train_loss += loss.item()
+            optimizer.step()
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
@@ -184,8 +189,13 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            recon_batch, mu, logvar = model(args, data, istrain=False)
-            test_loss += loss_function(recon_batch, data, mu, logvar).item()
+            mu, logvar = self.encode(x.view(-1, 784))
+            z = self.unscented(mu, logvar)
+            for sample in z:
+                recon_batch = self.decode(sample, istrain=istrain)
+                #recon_batch, mu, logvar = model(args, data, istrain=False)
+                loss = self.sample_loss(recon_batch, z, mu, logvar)
+                test_loss += self.sample_loss(recon_batch, z, mu, logvar).item()
             if i == 0:
                 n = min(data.size(0), 8)
                 comparison = torch.cat([data[:n],
