@@ -85,15 +85,16 @@ class VAE(nn.Module):
         #For a vector mu of length N with covariance matrix logvar,
         #form 2N sigma points used for taking the unscented transform.
         #mu = mu.view(-1) # Force shape
+        bs = mu.shape[0]
         N = mu.shape[1]
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         print(logvar.shape)
-        logvar.expand(128, 20, 20)
+        logvar_diag = torch.zeros(bs, N, N)
         for i in range(logvar.shape[0]):
-            logvar[i, :] = torch.diag(logvar[i, :])
-        print(logvar.shape)
-        varsqrt = math.sqrt(N)*torch.diag(logvar)
+            logvar_diag[i, :] = torch.diag(logvar[i, :])
+        print(logvar_diag.shape)
+        varsqrt = math.sqrt(N)*logvar_diag
         print(varsqrt.shape)
         x_sigma = []
         
