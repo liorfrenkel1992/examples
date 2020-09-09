@@ -91,10 +91,10 @@ class VAE(nn.Module):
         varsqrt = math.sqrt(N)*torch.diag(logvar)
         x_sigma = []
         
-        for i in xrange(N):
+        for i in range(N):
             x_sigma.append(mu + varsqrt[:, i])
 
-        for i in xrange(N):
+        for i in range(N):
             x_sigma.append(mu - varsqrt[:, i])
 
         return x_sigma
