@@ -110,11 +110,9 @@ class VAE(nn.Module):
                 torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 0, 1), torch.inverse(Epsilon)), (x - mu)))
     
     def sample_loss(self, x, z, mu_z, var_z):
-        K = len(z)
-        with torch.no_grad():
-            mu_x, var_x = self.decode(z)
-        
+        K = len(z)       
         pq_sum = []
+        
         for sample in z:
             with torch.no_grad():
                 mu_x, var_x = self.decode(sample)
