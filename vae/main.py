@@ -79,7 +79,7 @@ class VAE(nn.Module):
         for i in range(s.shape[0]):
             if s[i] > eps:
                 s_notneg[i] = s[i]
-
+        print(u.shape, s_notneg.shape, torch.transpose(v, 0, 1).shape)
         return torch.dot(u, torch.dot(torch.diag(torch.sqrt(s_notneg)), torch.transpose(v, 0, 1)))
     
     def unscented(self, mu, logvar):
