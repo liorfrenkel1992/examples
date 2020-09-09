@@ -165,7 +165,7 @@ def train(args, epoch):
         data = data.to(device)
         optimizer.zero_grad()
         mu, logvar = model.encode(data.view(-1, 784))
-        z = self.unscented(mu, logvar)
+        z = model.unscented(mu, logvar)
         for sample in z:
             recon_batch = model.decode(sample, istrain=istrain)
             #recon_batch, mu, logvar = model(args, data, istrain=False)
@@ -190,7 +190,7 @@ def test(args, epoch):
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
-            z = self.unscented(mu, logvar)
+            z = model.unscented(mu, logvar)
             for sample in z:
                 recon_batch = model.decode(sample, istrain=istrain)
                 #recon_batch, mu, logvar = model(args, data, istrain=False)
