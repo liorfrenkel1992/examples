@@ -100,8 +100,8 @@ class VAE(nn.Module):
     def norm_dist(self, x, mu, var):
         k = len(x)
         Epsilon = torch.diag(var)
-        return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k)))* \
-                torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose(x - mu), torch.inverse(Epsilon)), (x - mu))
+        return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k))))* \
+                torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose(x - mu), torch.inverse(Epsilon)), (x - mu)))
     
     def sample_loss(self, x, z, mu_z, var_z):
         K = len(z)
