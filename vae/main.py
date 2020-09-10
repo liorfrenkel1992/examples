@@ -131,7 +131,7 @@ class VAE(nn.Module):
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
 
-            return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1))
+            return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1).float())
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
