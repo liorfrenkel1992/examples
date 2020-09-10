@@ -111,8 +111,8 @@ class VAE(nn.Module):
             Epsilon[i, :] = torch.diag(var[i, :])
         
         C = 1/(torch.sqrt(torch.det(Epsilon)*pow(2*math.pi, k)))
-        print(torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu)).shape)
-        return C * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu)))
+        print(torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)).shape)
+        return C * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
         K = len(z)       
