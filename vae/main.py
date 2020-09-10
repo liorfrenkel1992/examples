@@ -125,7 +125,7 @@ class VAE(nn.Module):
             p_x_z = self.norm_dist(x, mu_x.detach(), var_x.detach())
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
             pq_sum.append((p_x_z*p_z)/q_z_x)
-            C = torch.ones(x.shape[0])
+            C = torch.ones(x.shape[0]).to(device)
             C.new_full(x.shape[0], (-(x.shape[1])/2)*math.log(2*math.pi))
                  
         return C + torch.log((1/K)*torch.max(pq_sum))
