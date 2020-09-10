@@ -128,8 +128,8 @@ class VAE(nn.Module):
             pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
             pq_sum_tensor = torch.squeeze(pq_sum_tensor)
             print(pq_sum_tensor.shape)
-            C = torch.ones((bs,)).to(device)
-            C.new_full(bs, (-(x.shape[1])/2)*math.log(2*math.pi))
+            C = torch.ones(bs).to(device)
+            C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
 
             return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1))
         
