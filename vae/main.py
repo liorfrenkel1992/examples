@@ -110,7 +110,7 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
         
-        C = 1/(torch.sqrt(torch.det(Epsilon)*torch.pow(2*math.pi, k)))
+        C = 1/(torch.sqrt(torch.det(Epsilon)*pow(2*math.pi, k)))
         print(C.shape)
         return C * torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 1, 2), torch.inverse(Epsilon)), (x - mu)))
     
