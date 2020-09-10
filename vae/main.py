@@ -65,7 +65,7 @@ class VAE(nn.Module):
         if istrain:
             return torch.sigmoid(self.fc4(h3))
         else:
-            return torch.sigmoid(self.fc41(h3)), torch.sigmoid(self.fc42(h3))
+            return self.fc41(h3), self.fc42(h3)
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -111,7 +111,7 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
         
-        C = 1/(torch.sqrt(torch.det(Epsilon)*pow(2*math.pi, k)))
+        C = 1/(torch.sqrt(torch.det(Epsilon)))
         return C * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
@@ -125,8 +125,10 @@ class VAE(nn.Module):
             p_x_z = self.norm_dist(x, mu_x.detach(), var_x.detach())
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
             pq_sum.append((p_x_z*p_z)/q_z_x)
+            C = torch.ones(x.shape[0])
+            C.new_full(x.shape[0], (-(x.shape[1])/2)*math.log(2*math.pi))
                  
-        return torch.log((1/K)*torch.max(pq_sum))
+        return C + torch.log((1/K)*torch.max(pq_sum))
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
