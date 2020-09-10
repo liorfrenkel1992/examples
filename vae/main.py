@@ -104,14 +104,16 @@ class VAE(nn.Module):
         return x_sigma
       
     def norm_dist(self, x, mu, var):
-        k = len(x)
-        print(var.shape)
-        Epsilon = torch.diag(var)
+        k = x.shape[1]
+        bs = x.shape[0]
+        Epsilon = torch.zeros(bs, k, k).to(device)
+        for i in range(var.shape[0]):
+            Epsilon[i, :] = torch.diag(var[i, :])
+        
         print(Epsilon.shape)
-        C = 1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k)))
+        C = 1/(torch.sqrt(torch.det(Epsilon)*torch.pow(2*math.pi(), k)))
         print(C.shape)
-        return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k))))* \
-                torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 0, 1), torch.inverse(Epsilon)), (x - mu)))
+        return C * torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 1, 2), torch.inverse(Epsilon)), (x - mu)))
     
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
         K = len(z)       
