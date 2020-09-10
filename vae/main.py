@@ -103,15 +103,14 @@ class VAE(nn.Module):
 
         return x_sigma
       
-    def norm_dist(self, x, mu, var):
+    def norm_dist_exp(self, x, mu, var):
         k = x.shape[1]
         bs = x.shape[0]
         Epsilon = torch.zeros(bs, k, k).to(device)
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
         
-        C = 1/(torch.sqrt(torch.det(Epsilon)))
-        return C * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
+        return torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
         K = len(z)       
@@ -121,9 +120,9 @@ class VAE(nn.Module):
         with torch.no_grad():
             for sample in z:
                 mu_x, var_x = self.decode(sample, istrain=istrain)
-                q_z_x = self.norm_dist(sample, mu_z, var_z)
-                p_x_z = self.norm_dist(x, mu_x, var_x)
-                p_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+                q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
+                p_x_z = self.norm_dist_exp(x, mu_x, var_x)
+                p_z = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 pq_sum.append((p_x_z*p_z)/q_z_x)
 
             pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
