@@ -119,10 +119,9 @@ class VAE(nn.Module):
         bs = x.shape[0]
         
         for sample in z:
-            with torch.no_grad():
-                mu_x, var_x = self.decode(sample, istrain=istrain)
+            mu_x, var_x = self.decode(sample, istrain=istrain)
             q_z_x = self.norm_dist(sample, mu_z, var_z)
-            p_x_z = self.norm_dist(x, mu_x.detach(), var_x.detach())
+            p_x_z = self.norm_dist(x, mu_x, var_x)
             p_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
             pq_sum.append((p_x_z*p_z)/q_z_x)
         
