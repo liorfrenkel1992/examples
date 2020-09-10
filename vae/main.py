@@ -105,7 +105,11 @@ class VAE(nn.Module):
       
     def norm_dist(self, x, mu, var):
         k = len(x)
+        print(var.shape)
         Epsilon = torch.diag(var)
+        print(Epsilon.shape)
+        C = 1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k)))
+        print(C.shape)
         return (1/(torch.sqrt(torch.det(Epsilon)*torch.power(2*math.pi(), k))))* \
                 torch.exp(-(1/2)*torch.dot(torch.dot(torch.transpose((x - mu), 0, 1), torch.inverse(Epsilon)), (x - mu)))
     
