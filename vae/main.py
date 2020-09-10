@@ -217,7 +217,7 @@ def test(args, epoch, istrain = True):
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        train(args, epoch, istrain=False)
+        #train(args, epoch, istrain=False)
         test(args, epoch, istrain=False)
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
