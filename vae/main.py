@@ -106,7 +106,6 @@ class VAE(nn.Module):
     def norm_dist(self, x, mu, var):
         k = x.shape[1]
         bs = x.shape[0]
-        print(x.shape)
         Epsilon = torch.zeros(bs, k, k).to(device)
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
@@ -117,18 +116,22 @@ class VAE(nn.Module):
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
         K = len(z)       
         pq_sum = []
+        bs = x.shape[0]
         
         for sample in z:
             with torch.no_grad():
                 mu_x, var_x = self.decode(sample, istrain=istrain)
             q_z_x = self.norm_dist(sample, mu_z, var_z)
             p_x_z = self.norm_dist(x, mu_x.detach(), var_x.detach())
-            p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
+            p_z = self.norm_dist(sample, torch.zeros(bs, z.shape[1]), torch.ones(bs, z.shape[1]))
             pq_sum.append((p_x_z*p_z)/q_z_x)
-            C = torch.ones(x.shape[0]).to(device)
-            C.new_full(x.shape[0], (-(x.shape[1])/2)*math.log(2*math.pi))
+        
+        pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
+        print(pq_sum_tensor.shape)
+        C = torch.ones(bs).to(device)
+        C.new_full(bs, (-(x.shape[1])/2)*math.log(2*math.pi))
                  
-        return C + torch.log((1/K)*torch.max(pq_sum))
+        return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1))
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
