@@ -127,7 +127,7 @@ class VAE(nn.Module):
             p_z = self.norm_dist(sample, torch.zeros(20), torch.ones(20))
             pq_sum.append((p_x_z*p_z)/q_z_x)
                  
-        return torch.max(torch.log((1/K)*torch.sum(pq_sum)))
+        return torch.log((1/K)*torch.max(pq_sum))
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
@@ -203,10 +203,8 @@ def test(args, epoch, istrain = True):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
-            for sample in z:
-                recon_batch = model.decode(sample, istrain=istrain)
-                #recon_batch, mu, logvar = model(args, data, istrain=False)
-                test_loss += model.sample_loss(recon_batch, z, mu, logvar, istrain=istrain).item()
+            #recon_batch, mu, logvar = model(args, data, istrain=False)
+            test_loss += model.sample_loss(data, z, mu, logvar, istrain=istrain).item()
             if i == 0:
                 n = min(data.size(0), 8)
                 comparison = torch.cat([data[:n],
