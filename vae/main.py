@@ -110,7 +110,9 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
         
-        return torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
+        sqrt_det = torch.sqrt(torch.det(Epsilon))
+        
+        return sqrt_det * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
         K = len(z)       
@@ -127,11 +129,11 @@ class VAE(nn.Module):
 
             pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
             pq_sum_tensor = torch.squeeze(pq_sum_tensor)
+            
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             
-            print(torch.max(pq_sum_tensor, dim=1))
-            return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1))
+            return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1)[0])
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
