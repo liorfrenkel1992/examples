@@ -104,6 +104,7 @@ class VAE(nn.Module):
         return x_sigma
       
     def norm_dist(self, x, mu, var):
+        print(x)
         k = x.shape[1]
         bs = x.shape[0]
         Epsilon = torch.zeros(bs, k, k).to(device)
