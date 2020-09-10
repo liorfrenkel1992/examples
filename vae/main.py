@@ -112,7 +112,6 @@ class VAE(nn.Module):
             Epsilon[i, :] = torch.diag(var[i, :])
         
         C = 1/(torch.sqrt(torch.det(Epsilon)*pow(2*math.pi, k)))
-        print(torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)).shape)
         return C * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
     def sample_loss(self, x, z, mu_z, var_z, istrain=True):
@@ -204,7 +203,7 @@ def test(args, epoch, istrain = True):
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data, istrain=False)
-            test_loss += model.sample_loss(data, z, mu, logvar, istrain=istrain).item()
+            test_loss += model.sample_loss(data.view(-1, 784), z, mu, logvar, istrain=istrain).item()
             if i == 0:
                 n = min(data.size(0), 8)
                 comparison = torch.cat([data[:n],
