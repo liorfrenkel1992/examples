@@ -117,12 +117,14 @@ class VAE(nn.Module):
         pq_sum = []
         bs = x.shape[0]
         max_x = torch.max(x, dim=1)[0]
+        max_x.repeat(1, x.shape[1])
         
         with torch.no_grad():
             for sample in z:
                 mu_x, var_x = self.decode(sample)
                 q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
                 print(x.shape)
+                
                 print(max_x.shape)
                 p_x_z = self.norm_dist_exp((x - max_x), mu_x, var_x)
                 p_z = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
