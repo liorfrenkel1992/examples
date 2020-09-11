@@ -7,7 +7,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
-import torch.distributions as tdist
+from torch.distributions.multivariate_normal import MultivariateNormal
 
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
@@ -62,10 +62,8 @@ class VAE(nn.Module):
 
     def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
-        if istrain:
-            return torch.sigmoid(self.fc4(h3))
-        else:
-            return self.fc41(h3), self.fc42(h3)
+        #return torch.sigmoid(self.fc4(h3))
+        return self.fc41(h3), self.fc42(h3)
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -112,18 +110,19 @@ class VAE(nn.Module):
         
         sqrt_det = torch.sqrt(torch.det(Epsilon))
         
-        return sqrt_det * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
+        return (1/sqrt_det) * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
-    def sample_loss(self, x, z, mu_z, var_z, istrain=True):
+    def UT_sample_loss(self, x, z, mu_z, var_z):
         K = len(z)       
         pq_sum = []
         bs = x.shape[0]
+        max_x = torch.max(x, dim=1)[0]
         
         with torch.no_grad():
             for sample in z:
-                mu_x, var_x = self.decode(sample, istrain=istrain)
+                mu_x, var_x = self.decode(sample)
                 q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
-                p_x_z = self.norm_dist_exp(x, mu_x, var_x)
+                p_x_z = self.norm_dist_exp((x - max_x), mu_x, var_x)
                 p_z = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 pq_sum.append((p_x_z*p_z)/q_z_x)
 
@@ -132,8 +131,37 @@ class VAE(nn.Module):
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+            print(pq_sum_tensor)
             
-            return C + torch.log((1/K)*torch.max(pq_sum_tensor, dim=1)[0])
+            return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
+    
+    def sample_loss(self, x, z, mu_z, var_z):
+        """
+        k = x.shape[1]
+        bs = x.shape[0]
+        Epsilon = torch.zeros(bs, k, k).to(device)
+        for i in range(var.shape[0]):
+            Epsilon[i, :] = torch.diag(var[i, :])
+        
+        norm_z = MultivariateNormal(mu, Epsilon)
+        """
+        bs = x.shape[0]
+        max_x = torch.max(x, dim=1)[0]
+        
+        with torch.no_grad():
+            mu_x, var_x = self.decode(z)
+            q_z_x = self.norm_dist_exp(z, mu_z, var_z)
+            p_x_z = self.norm_dist_exp((x - max_x), mu_x, var_x)
+            p_z = self.norm_dist_exp(z, torch.zeros(bs, z.shape[1]).to(device), torch.ones(bs, z.shape[1]).to(device))
+            
+            pq = (p_x_z*p_z)/q_z_x
+            
+            C = torch.ones(bs).to(device)
+            C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+            
+            return torch.sum(-(C + max_x + torch.log(pq)))
+        
+
         
     def unscented_mu_cov(self, x_sigma):
         #Approximate mean, covariance from 2N sigma points transformed through
@@ -148,14 +176,12 @@ class VAE(nn.Module):
         return x_mu, x_cov
   
 
-    def forward(self, args, x, istrain=True):
+    def forward(self, args, x):
         mu, logvar = self.encode(x.view(-1, 784))
-        if istrain:
-            z = self.reparameterize(mu, logvar)
-        else:
-            z = self.unscented(mu, logvar)
-            for sample in z:
-                recon_x = self.decode(sample, istrain=istrain)
+        #z = self.reparameterize(mu, logvar)
+        z = self.unscented(mu, logvar)
+        for sample in z:
+            recon_x = self.decode(sample)
         return recon_x, mu, logvar, z
 
 
@@ -185,9 +211,9 @@ def train(args, epoch, istrain=True):
         mu, logvar = model.encode(data.view(-1, 784))
         z = model.unscented(mu, logvar)
         for sample in z:
-            recon_batch = model.decode(sample, istrain=istrain)
-            #recon_batch, mu, logvar = model(args, data, istrain=False)
-            loss = model.sample_loss(recon_batch, z, mu, logvar, istrain=istrain)
+            #recon_batch = model.decode(sample)
+            #recon_batch, mu, logvar = model(args, data)
+            loss = model.UT_sample_loss(recon_batch, z, mu, logvar)
             loss.backward()
             train_loss += loss.item()
             optimizer.step()
@@ -201,32 +227,40 @@ def train(args, epoch, istrain=True):
           epoch, train_loss / len(train_loader.dataset)))
 
 
-def test(args, epoch, istrain = True):
+def test(args, epoch):
     model.eval()
+    UT_test_loss = 0
     test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
-            #recon_batch, mu, logvar = model(args, data, istrain=False)
-            test_loss += model.sample_loss(data.view(-1, 784), z, mu, logvar, istrain=istrain).item()
-            if i == 0:
-                n = min(data.size(0), 8)
-                comparison = torch.cat([data[:n],
-                                      recon_batch.view(args.batch_size, 1, 28, 28)[:n]])
-                save_image(comparison.cpu(),
-                         'results/reconstruction_' + str(epoch) + '.png', nrow=n)
+            z_sampled = self.reparameterize(mu, logvar)
+            #recon_batch, mu, logvar = model(args, data)
+            UT_test_loss += model.UT_sample_loss(data.view(-1, 784), z, mu, logvar).item()
+            test_loss += model.sample_loss(data.view(-1, 784), z_sampled, mu, logvar).item()
+            #if i == 0:
+               # n = min(data.size(0), 8)
+                #comparison = torch.cat([data[:n],
+                                      #recon_batch.view(args.batch_size, 1, 28, 28)[:n]])
+                #save_image(comparison.cpu(),
+                         #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
+    
+    UT_test_loss /= len(test_loader.dataset)
     test_loss /= len(test_loader.dataset)
-    print('====> Test set loss: {:.4f}'.format(test_loss))
+    print('====> Test set loss with reparameterization trick: {:.4f}'.format(test_loss))
+    print('====> Test set loss with UT: {:.4f}'.format(UT_test_loss))
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        #train(args, epoch, istrain=False)
-        test(args, epoch, istrain=False)
+        #train(args, epoch)
+        test(args, epoch)
+        """
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
             sample = model.decode(sample).cpu()
             save_image(sample.view(64, 1, 28, 28),
                        'results/sample_' + str(epoch) + '.png')
+        """
