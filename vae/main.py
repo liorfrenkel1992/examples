@@ -122,6 +122,8 @@ class VAE(nn.Module):
             for sample in z:
                 mu_x, var_x = self.decode(sample)
                 q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
+                print(x.shape)
+                print(max_x.shape)
                 p_x_z = self.norm_dist_exp((x - max_x), mu_x, var_x)
                 p_z = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 pq_sum.append((p_x_z*p_z)/q_z_x)
