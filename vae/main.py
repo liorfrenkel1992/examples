@@ -117,7 +117,7 @@ class VAE(nn.Module):
         pq_sum = []
         bs = x.shape[0]
         max_x = torch.max(x, dim=1)[0]
-        max_x = torch.cat(x.shape[1]*[max_x])
+        max_x = torch.cat(x.shape[1]*[max_x], dim=1)
         
         with torch.no_grad():
             for sample in z:
