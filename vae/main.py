@@ -236,7 +236,7 @@ def test(args, epoch):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
-            z_sampled = self.reparameterize(mu, logvar)
+            z_sampled = model.reparameterize(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
             UT_test_loss += model.UT_sample_loss(data.view(-1, 784), z, mu, logvar).item()
             test_loss += model.sample_loss(data.view(-1, 784), z_sampled, mu, logvar).item()
