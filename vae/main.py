@@ -136,6 +136,7 @@ class VAE(nn.Module):
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             print(pq_sum_tensor)
+            print(pq_sum_tensor.shape, C.shape, max_x.shape)
             
             return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
     
