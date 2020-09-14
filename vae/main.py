@@ -142,7 +142,7 @@ class VAE(nn.Module):
             #return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
     
     def sample_loss(self, x, mu_z, var_z):
-        
+        """
         k = mu_z.shape[1]
         bs = x.shape[0]
         Epsilon = torch.zeros(bs, k, k).to(device)
@@ -153,7 +153,8 @@ class VAE(nn.Module):
         print(Epsilon.shape)
         dist_z = MultivariateNormal(mu_z, Epsilon)
         z = dist_z.sample_n(bs)
-        
+        """
+        z = self.reparameterize(mu_z, var_z)
         max_x = torch.max(x, dim=1)[0]
         
         with torch.no_grad():
@@ -168,6 +169,7 @@ class VAE(nn.Module):
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             
             return torch.sum(-(C + max_x + torch.log(pq)))
+            #return torch.sum(-(C + max_x + torch.log(pq)))
         
 
         
