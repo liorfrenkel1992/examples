@@ -156,6 +156,7 @@ class VAE(nn.Module):
         """
         z = self.reparameterize(mu_z, var_z)
         max_x = torch.max(x, dim=1)[0]
+        bs = x.shape[0]
         
         with torch.no_grad():
             mu_x, var_x = self.decode(z)
