@@ -150,6 +150,7 @@ class VAE(nn.Module):
             Epsilon[i, :] = torch.diag(var_z[i, :])
         
         #Epsilon = torch.diag(var_z)
+        print(Epsilon.shape)
         dist_z = MultivariateNormal(mu_z, Epsilon)
         z = dist_z.sample_n(bs)
         
