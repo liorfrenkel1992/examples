@@ -131,7 +131,7 @@ class VAE(nn.Module):
                 i+=1
 
             pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
-            pq_sum_tensor = torch.squeeze(pq_sum_tensor)
+            #pq_sum_tensor = torch.squeeze(pq_sum_tensor)
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
@@ -149,7 +149,7 @@ class VAE(nn.Module):
         #for i in range(var_z.shape[0]):
             #Epsilon[i, :] = torch.diag(var[i, :])
         
-        Epsilon = torch.diag(var)
+        Epsilon = torch.diag(var_z)
         dist_z = MultivariateNormal(mu, Epsilon)
         z = dist_z.sample_n(bs)
         
@@ -158,7 +158,7 @@ class VAE(nn.Module):
         with torch.no_grad():
             mu_x, var_x = self.decode(z)
             q_z_x = self.norm_dist_exp(z, mu_z, var_z)
-            p_x_z = self.norm_dist_exp((x - max_x), mu_x, var_x)
+            p_x_z = self.norm_dist_exp(x, mu_x, var_x)
             p_z = self.norm_dist_exp(z, torch.zeros(bs, z.shape[1]).to(device), torch.ones(bs, z.shape[1]).to(device))
             
             pq = (p_x_z*p_z)/q_z_x
