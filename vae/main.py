@@ -117,7 +117,7 @@ class VAE(nn.Module):
         pq_sum = []
         bs = x.shape[0]
         max_x = torch.max(x, dim=1)[0]
-        max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
+        #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
         
         i=1
         with torch.no_grad():
@@ -125,7 +125,7 @@ class VAE(nn.Module):
                 print(i)
                 mu_x, var_x = self.decode(sample)
                 q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
-                p_x_z = self.norm_dist_exp((x - max_x), mu_x, var_x)
+                p_x_z = self.norm_dist_exp(x, mu_x, var_x)
                 p_z = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 pq_sum.append((p_x_z*p_z)/q_z_x)
                 i+=1
@@ -138,7 +138,8 @@ class VAE(nn.Module):
             print(pq_sum_tensor)
             print(pq_sum_tensor.shape, C.shape, max_x.shape)
             
-            return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
+            return torch.sum(-(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
+            #return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
     
     def sample_loss(self, x, mu_z, var_z):
         
