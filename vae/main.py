@@ -145,11 +145,11 @@ class VAE(nn.Module):
         
         k = mu_z.shape[1]
         bs = x.shape[0]
-        #Epsilon = torch.zeros(bs, k, k).to(device)
-        #for i in range(var_z.shape[0]):
-            #Epsilon[i, :] = torch.diag(var[i, :])
+        Epsilon = torch.zeros(bs, k, k).to(device)
+        for i in range(var_z.shape[0]):
+            Epsilon[i, :] = torch.diag(var_z[i, :])
         
-        Epsilon = torch.diag(var_z)
+        #Epsilon = torch.diag(var_z)
         dist_z = MultivariateNormal(mu_z, Epsilon)
         z = dist_z.sample_n(bs)
         
