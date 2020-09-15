@@ -137,6 +137,7 @@ class VAE(nn.Module):
                 vars_x.append(var_x)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+                print(x_exp.shape, z_exp.shape)
                 x_exps.append(x_exp)
                 z_exps.append(z_exp)
         
