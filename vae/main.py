@@ -13,7 +13,7 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
 parser.add_argument('--use_UT', action='store_true', default=False,
                     help='the model uses unscented transformation for sampling')
-parser.add_argument('--batch-size', type=int, default=64, metavar='N',
+parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--epochs', type=int, default=10, metavar='N',
                     help='number of epochs to train (default: 10)')
@@ -114,7 +114,6 @@ class VAE(nn.Module):
         Sigma = self.batch_det(x, var)
         exp1 = torch.squeeze((-1/2)*torch.sum(torch.log(var), dim=1))
         exp2 = torch.squeeze(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Sigma)), (x - mu).unsqueeze(-1)))
-        print(torch.log(var[0]))
         return exp1 + exp2
     
     def norm_dist(self, x, mu, var, max_x):
@@ -136,7 +135,7 @@ class VAE(nn.Module):
             for sample in z:
                 mu_x, logvar_x = self.decode(sample)
                 var_x = torch.exp(logvar_x)
-                print(var_x)
+                print(var_x[0])
                 means_x.append(mu_x)
                 vars_x.append(var_x)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
