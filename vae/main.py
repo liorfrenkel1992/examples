@@ -114,7 +114,7 @@ class VAE(nn.Module):
         Sigma = self.batch_det(x, var)
         exp1 = torch.squeeze((-1/2)*torch.sum(torch.log(var), dim=1))
         exp2 = torch.squeeze(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Sigma)), (x - mu).unsqueeze(-1)))
-        print(torch.max(var[0]))
+        print(torch.log(var[0]))
         return exp1 + exp2
     
     def norm_dist(self, x, mu, var, max_x):
