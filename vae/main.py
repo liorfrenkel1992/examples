@@ -154,6 +154,7 @@ class VAE(nn.Module):
                 p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
+                print(diff)
                 pq_sum = p_x_z*p_z
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
