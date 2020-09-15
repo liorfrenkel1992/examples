@@ -108,10 +108,15 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
                 
-        return -(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)), Epsilon
+        return -(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1))
     
     def norm_dist(self, x, mu, var, max_x):
-        exp_norm, Epsilon = norm_dist_exp(self, x, mu, var)
+        exp_norm = norm_dist_exp(self, x, mu, var)
+        k = x.shape[1]
+        bs = x.shape[0]
+        Epsilon = torch.zeros(bs, k, k).to(device)
+        for i in range(var.shape[0]):
+            Epsilon[i, :] = torch.diag(var[i, :])
         sqrt_det = torch.sqrt(torch.det(Epsilon))
         
         return (1/sqrt_det) * torch.exp(exp_norm - max_x)
