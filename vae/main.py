@@ -153,8 +153,8 @@ class VAE(nn.Module):
         
         with torch.no_grad():
             for inx, sample in enumerate(z):
-                mu_x = means_x[i]
-                var_x = vars_x[i]
+                mu_x = means_x[inx]
+                var_x = vars_x[inx]
                 #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
                 p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
