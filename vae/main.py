@@ -63,7 +63,7 @@ class VAE(nn.Module):
     def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
         #return torch.sigmoid(self.fc4(h3))
-        return F.sigmoid(self.fc41(h3)), F.sigmoid(self.fc42(h3))
+        return self.fc41(h3), self.fc42(h3)
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -134,7 +134,9 @@ class VAE(nn.Module):
         vars_x = []
         with torch.no_grad():
             for sample in z:
-                mu_x, var_x = self.decode(sample)
+                mu_x, logvar_x = self.decode(sample)
+                var_x = torch.exp(logvar_x)
+                print(var_x)
                 means_x.append(mu_x)
                 vars_x.append(var_x)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
@@ -160,7 +162,6 @@ class VAE(nn.Module):
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
-                print(pq_sum.shape, diff.shape)
                 print(diff)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
