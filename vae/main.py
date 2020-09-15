@@ -169,8 +169,7 @@ class VAE(nn.Module):
             
                 C = torch.ones(bs).to(device)
                 C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
-                D = torch.ones(bs).to(device)
-                D.new_full((bs,), (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1]))
+                D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
             
         return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
