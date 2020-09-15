@@ -157,7 +157,7 @@ class VAE(nn.Module):
                 pq_sum = p_x_z*p_z
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
-                    if diff[i] >= -30:
+                    if diff[i] >= -10:
                         big_pq[i] = pq_sum[i]
                 pq_sum_tensor += big_pq
                 print(pq_sum.shape)
