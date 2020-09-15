@@ -144,10 +144,8 @@ class VAE(nn.Module):
         
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
-        print(x_exps_tensor.shape, z_exps_tensor.shape)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
-        print(x_exps_max.shape, z_exps_max.shape)
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -160,6 +158,7 @@ class VAE(nn.Module):
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
+                print(pq_sum)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
                     if diff[i] >= -10:
@@ -171,7 +170,6 @@ class VAE(nn.Module):
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
-            print(pq_sum_tensor)
             
             #return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
             return torch.sum(-(C + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)))
