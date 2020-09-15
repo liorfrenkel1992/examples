@@ -145,7 +145,7 @@ class VAE(nn.Module):
         #max_x = torch.max(exp_x, dim=1)[0]
         #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
         
-        pq_sum_tensor = torch.zeros(bs)
+        pq_sum_tensor = torch.zeros(bs).to(device)
         
         with torch.no_grad():
             for sample in z:
