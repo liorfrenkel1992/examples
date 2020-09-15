@@ -258,8 +258,8 @@ def train(args, epoch, istrain=True):
 
 def test(args, epoch):
     model.eval()
-    UT_test_loss = torch.zeros(args.(batch-size))
-    test_loss = torch.zeros(args.(batch-size))
+    UT_test_loss = torch.zeros(args.batch_size)
+    test_loss = torch.zeros(args.batch_size)
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
