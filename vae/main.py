@@ -118,8 +118,9 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
         sqrt_det = torch.sqrt(torch.det(Epsilon))
+        diff = exp_norm - max_x
         
-        return (1/sqrt_det) * torch.exp(exp_norm - max_x)
+        return (1/sqrt_det) * torch.exp(diff), diff
     
     def UT_sample_loss(self, x, z, mu_z, var_z):
         K = len(z)       
@@ -144,27 +145,26 @@ class VAE(nn.Module):
         #max_x = torch.max(exp_x, dim=1)[0]
         #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
         
-        #pq_sum_tensor = torch.zeros(bs)
+        pq_sum_tensor = torch.zeros(bs)
         
         with torch.no_grad():
             for sample in z:
                 mu_x, var_x = self.decode(sample)
                 #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
-                p_x_z = self.norm_dist(x, mu_x, var_x, x_exps_max)
-                p_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
-                pq_sum.append(p_x_z.unsqueeze(-1)*p_z.unsqueeze(-1))
-                print(p_x_z.shape, p_z.shape)
+                p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
+                p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
+                if diff_x + diff_z <= 30:
+                    pq_sum_tensor += p_x_z.unsqueeze(-1)*p_z.unsqueeze(-1)
 
-            pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
+            #pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
             #pq_sum_tensor = torch.squeeze(pq_sum_tensor)
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             print(pq_sum_tensor)
-            print(pq_sum_tensor.shape, C.shape, max_x.shape)
             
-            return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
-            #return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
+            #return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
+            return torch.sum(-(C + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)))
     
     def sample_loss(self, x, mu_z, var_z):
         """
