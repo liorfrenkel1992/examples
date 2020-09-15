@@ -108,7 +108,7 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
                 
-        return -(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1))
+        return torch.squeeze(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
     
     def norm_dist(self, x, mu, var, max_x):
         exp_norm = norm_dist_exp(self, x, mu, var)
@@ -132,16 +132,14 @@ class VAE(nn.Module):
                 mu_x, var_x = self.decode(sample)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
-                x_exp = torch.squeeze(x_exp)
-                z_exp = torch.squeeze(z_exp)
                 x_exps.append(x_exp)
                 z_exps.append(z_exp)
                 print(x_exp.shape, z_exp.shape)
         
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
-        x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
-        z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
+        x_exps_max = torch.max(x_exps_tensor, dim=0)[0]
+        z_exps_max = torch.max(z_exps_tensor, dim=0)[0]
         #max_x = torch.max(exp_x, dim=1)[0]
         #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
         
@@ -154,7 +152,7 @@ class VAE(nn.Module):
                 p_x_z = self.norm_dist(x, mu_x, var_x, x_exps_max)
                 p_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 pq_sum.append(p_x_z*p_z)
-                print(pq_sum.shape)
+                print(p_x_z.shape, p_z.shape)
 
             pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
             #pq_sum_tensor = torch.squeeze(pq_sum_tensor)
