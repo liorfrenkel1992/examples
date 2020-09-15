@@ -125,13 +125,16 @@ class VAE(nn.Module):
     
     def UT_sample_loss(self, x, z, mu_z, var_z):
         K = len(z)       
-        pq_sum = []
         bs = x.shape[0]
         x_exps = []
         z_exps = []
+        means_x = []
+        vars_x = []
         with torch.no_grad():
             for sample in z:
                 mu_x, var_x = self.decode(sample)
+                means_x.append(mu_x)
+                vars_x.append(var_x)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 x_exps.append(x_exp.unsqueeze(-1))
@@ -149,13 +152,15 @@ class VAE(nn.Module):
         pq_sum_tensor = torch.zeros(bs).to(device)
         
         with torch.no_grad():
-            for sample in z:
-                mu_x, var_x = self.decode(sample)
+            for inx, sample in enumerate(z):
+                mu_x = means_x[i]
+                var_x = vars_x[i]
                 #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
                 p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
+                print(pq_sum)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
                     if diff[i] >= -10:
