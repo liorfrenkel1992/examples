@@ -100,35 +100,53 @@ class VAE(nn.Module):
             x_sigma.append(mu - varsqrt[:, i])
 
         return x_sigma
-      
+    
     def norm_dist_exp(self, x, mu, var):
         k = x.shape[1]
         bs = x.shape[0]
         Epsilon = torch.zeros(bs, k, k).to(device)
         for i in range(var.shape[0]):
             Epsilon[i, :] = torch.diag(var[i, :])
-        
+                
+        return -(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)), Epsilon
+    
+    def norm_dist(self, x, mu, var, max_x):
+        exp_norm, Epsilon = norm_dist_exp(self, x, mu, var)
         sqrt_det = torch.sqrt(torch.det(Epsilon))
         
-        return (1/sqrt_det) * torch.exp(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
+        return (1/sqrt_det) * torch.exp(exp_norm - max_x)
     
     def UT_sample_loss(self, x, z, mu_z, var_z):
         K = len(z)       
         pq_sum = []
         bs = x.shape[0]
-        max_x = torch.max(x, dim=1)[0]
-        #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
-        
-        i=1
+        x_exps = []
+        z_exps = []
         with torch.no_grad():
             for sample in z:
-                print(i)
                 mu_x, var_x = self.decode(sample)
-                q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
-                p_x_z = self.norm_dist_exp(x, mu_x, var_x)
-                p_z = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
-                pq_sum.append((p_x_z*p_z)/q_z_x)
-                i+=1
+                x_exp = self.norm_dist_exp(x, mu_x, var_x)
+                z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+                x_exps.append(x_exp)
+                z_exps.append(z_exp)
+        
+        x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
+        z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
+        x_exps_max = torch.max(x_exps, dim=1)[0]
+        z_exps_max = torch.max(z_exps, dim=1)[0]
+        #max_x = torch.max(exp_x, dim=1)[0]
+        #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
+        
+        #pq_sum_tensor = torch.zeros(bs)
+        
+        with torch.no_grad():
+            for sample in z:
+                mu_x, var_x = self.decode(sample)
+                #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
+                p_x_z = self.norm_dist(x, mu_x, var_x, x_exps_max)
+                p_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
+                pq_sum.append(p_x_z*p_z)
+                print(pq_sum.shape)
 
             pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
             #pq_sum_tensor = torch.squeeze(pq_sum_tensor)
@@ -138,7 +156,7 @@ class VAE(nn.Module):
             print(pq_sum_tensor)
             print(pq_sum_tensor.shape, C.shape, max_x.shape)
             
-            return torch.sum(-(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
+            return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
             #return torch.sum(-(C + max_x + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1))))
     
     def sample_loss(self, x, mu_z, var_z):
@@ -240,16 +258,16 @@ def train(args, epoch, istrain=True):
 
 def test(args, epoch):
     model.eval()
-    UT_test_loss = 0
-    test_loss = 0
+    UT_test_loss = torch.zeros(args.(batch-size))
+    test_loss = torch.zeros(args.(batch-size))
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
-            UT_test_loss += model.UT_sample_loss(data.view(-1, 784), z, mu, logvar).item()
-            test_loss += model.sample_loss(data.view(-1, 784), mu, logvar).item()
+            UT_test_loss += model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)
+            test_loss += model.sample_loss(data.view(-1, 784), mu, logvar)
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
