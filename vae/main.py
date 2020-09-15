@@ -285,10 +285,12 @@ def test(args, epoch):
                          #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
     
-    torch.sum(UT_test_loss).item() /= len(test_loader.dataset)
-    torch.sum(test_loss).item() /= len(test_loader.dataset)
-    print('====> Test set score with reparameterization trick: {:.4f}'.format(test_loss))
-    print('====> Test set score with UT: {:.4f}'.format(UT_test_loss))
+    UT_score = torch.sum(UT_test_loss).item()
+    reg_loss = torch.sum(test_loss).item()
+    UT_score /= len(test_loader.dataset)
+    reg_loss /= len(test_loader.dataset)
+    print('====> Test set score with regular sampling: {:.4f}'.format(reg_loss))
+    print('====> Test set score with UT: {:.4f}'.format(UT_score))
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
