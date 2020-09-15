@@ -134,7 +134,7 @@ class VAE(nn.Module):
         j = 1
         with torch.no_grad():
             for sample in z:
-                print(i)
+                print(j)
                 mu_x, logvar_x = self.decode(sample)
                 var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
