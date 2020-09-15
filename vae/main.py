@@ -137,8 +137,8 @@ class VAE(nn.Module):
                 vars_x.append(var_x)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
-                x_exps.append(x_exp.unsqueeze(-1))
-                z_exps.append(z_exp.unsqueeze(-1))
+                x_exps.append(x_exp)
+                z_exps.append(z_exp)
         
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
