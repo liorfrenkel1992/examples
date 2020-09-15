@@ -104,25 +104,24 @@ class VAE(nn.Module):
     def batch_det(self, x, var):
         k = x.shape[1]
         bs = x.shape[0]
-        Epsilon = torch.zeros(bs, k, k).to(device)
+        Sigma = torch.zeros(bs, k, k).to(device)
         for i in range(var.shape[0]):
-            Epsilon[i, :] = torch.diag(var[i, :])
+            Sigma[i, :] = torch.diag(var[i, :])
         
-        return Epsilon
+        return Sigma
     
     def norm_dist_exp(self, x, mu, var):
-        Epsilon = self.batch_det(x, var)
-        
-        return torch.squeeze(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Epsilon)), (x - mu).unsqueeze(-1)))
+        Sigma = self.batch_det(x, var)
+        return torch.squeeze((-1/2)*torch.sum(torch.log(var), dim=1) \ 
+                             -(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Sigma)), (x - mu).unsqueeze(-1)))
     
     def norm_dist(self, x, mu, var, max_x):
         exp_norm = self.norm_dist_exp(x, mu, var)
-        Epsilon = self.batch_det(x, var)
-        sqrt_det = torch.sqrt(torch.det(Epsilon))
-        print(sqrt_det)
+        #Sigma = self.batch_det(x, var)
+        #sqrt_det = torch.sqrt(torch.det(Sigma))
         diff = exp_norm - max_x
         
-        return (1/sqrt_det) * torch.exp(diff), diff
+        return torch.exp(diff), diff
     
     def UT_sample_loss(self, x, z, mu_z, var_z):
         K = len(z)       
@@ -145,10 +144,6 @@ class VAE(nn.Module):
         z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
-        print(x_exps_max)
-        print(z_exps_max)
-        #max_x = torch.max(exp_x, dim=1)[0]
-        #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -161,6 +156,7 @@ class VAE(nn.Module):
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
+                print(pq_sum)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
                     if diff[i] >= -10:
@@ -172,6 +168,7 @@ class VAE(nn.Module):
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+            sigma = (-1/2)*torch.sum(torch.log(var_x0
             print(pq_sum_tensor)
             
             #return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
