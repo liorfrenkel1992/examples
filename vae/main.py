@@ -112,6 +112,7 @@ class VAE(nn.Module):
     
     def norm_dist_exp(self, x, mu, var):
         Sigma = self.batch_det(x, var)
+        print(var.shape)
         return torch.squeeze((-1/2)*torch.sum(torch.log(var), dim=1)
                              -(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Sigma)), (x - mu).unsqueeze(-1)))
     
@@ -137,12 +138,11 @@ class VAE(nn.Module):
                 vars_x.append(var_x)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
-                print(x_exp.shape, z_exp.shape)
-                x_exps.append(x_exp)
-                z_exps.append(z_exp)
+                x_exps.append(x_exp.unsqueeze(-1))
+                z_exps.append(z_exp.unsqueeze(-1))
         
-        x_exps_tensor = torch.cat(x_exps).to(device)
-        z_exps_tensor = torch.cat(z_exps).to(device)
+        x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
+        z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
         print(x_exps_tensor.shape, z_exps_tensor.shape)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
