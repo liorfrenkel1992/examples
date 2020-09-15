@@ -101,7 +101,7 @@ class VAE(nn.Module):
 
         return x_sigma
     
-    def batch_det(self, x, var):]
+    def batch_det(self, x, var):
         k = x.shape[1]
         bs = x.shape[0]
         Epsilon = torch.zeros(bs, k, k).to(device)
