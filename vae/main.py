@@ -157,6 +157,7 @@ class VAE(nn.Module):
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
                 print(pq_sum.shape, diff.shape)
+                print(diff)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
                     if diff[i] >= -10:
