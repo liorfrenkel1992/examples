@@ -134,11 +134,12 @@ class VAE(nn.Module):
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 x_exps.append(x_exp)
                 z_exps.append(z_exp)
+                print(x_exp.shape, z_exp.shape)
         
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
-        x_exps_max = torch.max(x_exps, dim=1)[0]
-        z_exps_max = torch.max(z_exps, dim=1)[0]
+        x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
+        z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
         #max_x = torch.max(exp_x, dim=1)[0]
         #max_x = torch.cat(x.shape[1]*[max_x.unsqueeze(-1)], dim=1)
         
