@@ -172,7 +172,7 @@ class VAE(nn.Module):
                 D = torch.ones(bs).to(device)
                 D.new_full((bs,), (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
             
-            return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
+          return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
     def sample_loss(self, x, mu_z, logvar_z):
         z = []
