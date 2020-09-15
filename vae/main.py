@@ -168,7 +168,6 @@ class VAE(nn.Module):
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
-            sigma = (-1/2)*torch.sum(torch.log(var_x0
             print(pq_sum_tensor)
             
             #return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
