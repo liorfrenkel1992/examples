@@ -124,7 +124,7 @@ class VAE(nn.Module):
         
         return torch.exp(diff), diff
     
-    def UT_sample_loss(self, x, z, mu_z, var_z):
+    def UT_sample_loss(self, x, z, mu_z, logvar_z):
         K = len(z)       
         bs = x.shape[0]
         x_exps = []
@@ -145,14 +145,13 @@ class VAE(nn.Module):
                 z_exps.append(z_exp.unsqueeze(-1))
                 j += 1
         
-        x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
-        z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
-        x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
-        z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
+            x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
+            z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
+            x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
+            z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
+
+            pq_sum_tensor = torch.zeros(bs).to(device)
         
-        pq_sum_tensor = torch.zeros(bs).to(device)
-        
-        with torch.no_grad():
             for inx, sample in enumerate(z):
                 print(inx)
                 mu_x = means_x[inx]
@@ -168,36 +167,75 @@ class VAE(nn.Module):
                         big_pq[i] = pq_sum[i]
                 pq_sum_tensor += big_pq
             
-            C = torch.ones(bs).to(device)
-            C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+                C = torch.ones(bs).to(device)
+                C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+                D = torch.ones(bs).to(device)
+                D.new_full((bs,), (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
             
-            return C + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
+            return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
     def sample_loss(self, x, mu_z, logvar_z):
-        
+        z = []
+        bs = x.shape[0]
         var_z = torch.exp(logvar_z)
         Sigma = self.batch_diag(mu_z, var_z)
         
         print(Sigma.shape)
         dist_z = MultivariateNormal(mu_z, Sigma)
-        z = dist_z.sample_n(bs)
+        for i in range(2*mu_z.shape[1]):
+            z.append(dist_z.sample_n(bs))
+        print(z[0].shape)
         
-        max_x = torch.max(x, dim=1)[0]
-        bs = x.shape[0]
+        K = len(z)       
+        x_exps = []
+        z_exps = []
+        means_x = []
+        vars_x = []
         
+        j = 1
         with torch.no_grad():
-            mu_x, var_x = self.decode(z)
-            q_z_x = self.norm_dist_exp(z, mu_z, var_z)
-            p_x_z = self.norm_dist_exp(x, mu_x, var_x)
-            p_z = self.norm_dist_exp(z, torch.zeros(bs, z.shape[1]).to(device), torch.ones(bs, z.shape[1]).to(device))
+            for sample in z:
+                print(j)
+                mu_x, logvar_x = self.decode(sample)
+                var_x = torch.exp(logvar_x)
+                means_x.append(mu_x)
+                vars_x.append(var_x)
+                x_exp = self.norm_dist_exp(x, mu_x, var_x)
+                z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+                z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
+                x_exps.append(x_exp.unsqueeze(-1))
+                z1_exps.append(z1_exp.unsqueeze(-1))
+                z2_exps.append(z2_exp.unsqueeze(-1))
+                j += 1
+        
+            x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
+            z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
+            z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
+            x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
+            z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
+            z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
+                       
+            pq_sum_tensor = torch.zeros(bs).to(device)
+        
+            for inx, sample in enumerate(z):
+                print(inx)
+                mu_x = means_x[inx]
+                var_x = vars_x[inx]
+                p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
+                p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
+                q_z_x, diff_z2 = self.norm_dist_exp(sample, mu_z, var_z, z2_exps_max)
+                diff = diff_x + diff_z1 + diff_z2
+                pq_sum = (p_x_z*p_z)/q_z_x
+                big_pq = torch.zeros_like(pq_sum).to(device)
+                for i in range(bs):
+                    if diff[i] >= -10:
+                        big_pq[i] = pq_sum[i]
+                pq_sum_tensor += big_pq
             
-            pq = (p_x_z*p_z)/q_z_x
+                C = torch.ones(bs).to(device)
+                C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             
-            C = torch.ones(bs).to(device)
-            C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
-            
-            return torch.sum(-(C + max_x + torch.log(pq)))
-            #return torch.sum(-(C + max_x + torch.log(pq)))
+            return C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor)
         
 
         
@@ -267,8 +305,8 @@ def train(args, epoch, istrain=True):
 
 def test(args, epoch):
     model.eval()
-    UT_test_loss = torch.zeros(args.batch_size)
-    test_loss = torch.zeros(args.batch_size)
+    UT_test_loss = torch.zeros(args.batch_size).to(device)
+    test_loss = torch.zeros(args.batch_size).to(device)
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
