@@ -132,6 +132,8 @@ class VAE(nn.Module):
                 mu_x, var_x = self.decode(sample)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+                x_exp = torch.squeeze(x_exp)
+                z_exp = torch.squeeze(z_exp)
                 x_exps.append(x_exp)
                 z_exps.append(z_exp)
                 print(x_exp.shape, z_exp.shape)
