@@ -101,7 +101,7 @@ class VAE(nn.Module):
 
         return x_sigma
     
-    def batch_det(self, x, var):
+    def batch_diag(self, x, var):
         k = x.shape[1]
         bs = x.shape[0]
         Sigma = torch.zeros(bs, k, k).to(device)
@@ -111,7 +111,7 @@ class VAE(nn.Module):
         return Sigma
     
     def norm_dist_exp(self, x, mu, var):
-        Sigma = self.batch_det(x, var)
+        Sigma = self.batch_diag(x, var)
         exp1 = torch.squeeze((-1/2)*torch.sum(torch.log(var), dim=1))
         exp2 = torch.squeeze(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Sigma)), (x - mu).unsqueeze(-1)))
         return exp1 + exp2
@@ -131,8 +131,10 @@ class VAE(nn.Module):
         z_exps = []
         means_x = []
         vars_x = []
+        j = 1
         with torch.no_grad():
             for sample in z:
+                print(i)
                 mu_x, logvar_x = self.decode(sample)
                 var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
@@ -141,6 +143,7 @@ class VAE(nn.Module):
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 x_exps.append(x_exp.unsqueeze(-1))
                 z_exps.append(z_exp.unsqueeze(-1))
+                j += 1
         
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
@@ -151,6 +154,7 @@ class VAE(nn.Module):
         
         with torch.no_grad():
             for inx, sample in enumerate(z):
+                print(inx)
                 mu_x = means_x[inx]
                 var_x = vars_x[inx]
                 #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
@@ -158,36 +162,26 @@ class VAE(nn.Module):
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
-                print(pq_sum)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
                     if diff[i] >= -10:
                         big_pq[i] = pq_sum[i]
                 pq_sum_tensor += big_pq
-
-            #pq_sum_tensor = torch.cat(pq_sum, dim=1).to(device)
-            #pq_sum_tensor = torch.squeeze(pq_sum_tensor)
             
             C = torch.ones(bs).to(device)
             C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             
-            #return -(C + torch.log((1/K)*torch.sum(pq_sum_tensor, dim=1)))
-            return torch.sum(-(C + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)))
+            return C + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
-    def sample_loss(self, x, mu_z, var_z):
-        """
-        k = mu_z.shape[1]
-        bs = x.shape[0]
-        Epsilon = torch.zeros(bs, k, k).to(device)
-        for i in range(var_z.shape[0]):
-            Epsilon[i, :] = torch.diag(var_z[i, :])
+    def sample_loss(self, x, mu_z, logvar_z):
         
-        #Epsilon = torch.diag(var_z)
-        print(Epsilon.shape)
-        dist_z = MultivariateNormal(mu_z, Epsilon)
+        var_z = torch.exp(logvar_z)
+        Sigma = self.batch_diag(mu_z, var_z)
+        
+        print(Sigma.shape)
+        dist_z = MultivariateNormal(mu_z, Sigma)
         z = dist_z.sample_n(bs)
-        """
-        z = self.reparameterize(mu_z, var_z)
+        
         max_x = torch.max(x, dim=1)[0]
         bs = x.shape[0]
         
@@ -291,10 +285,10 @@ def test(args, epoch):
                          #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
     
-    UT_test_loss /= len(test_loader.dataset)
-    test_loss /= len(test_loader.dataset)
-    print('====> Test set loss with reparameterization trick: {:.4f}'.format(test_loss))
-    print('====> Test set loss with UT: {:.4f}'.format(UT_test_loss))
+    torch.sum(UT_test_loss).item() /= len(test_loader.dataset)
+    torch.sum(test_loss).item() /= len(test_loader.dataset)
+    print('====> Test set score with reparameterization trick: {:.4f}'.format(test_loss))
+    print('====> Test set score with UT: {:.4f}'.format(UT_test_loss))
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
