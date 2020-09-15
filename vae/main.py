@@ -140,8 +140,8 @@ class VAE(nn.Module):
                 x_exps.append(x_exp)
                 z_exps.append(z_exp)
         
-        x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
-        z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
+        x_exps_tensor = torch.cat(x_exps).to(device)
+        z_exps_tensor = torch.cat(z_exps).to(device)
         print(x_exps_tensor.shape, z_exps_tensor.shape)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z_exps_max = torch.max(z_exps_tensor, dim=1)[0]
