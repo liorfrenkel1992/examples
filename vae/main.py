@@ -132,6 +132,7 @@ class VAE(nn.Module):
         means_x = []
         vars_x = []
         j = 1
+        print(z[0].shape)
         with torch.no_grad():
             for sample in z:
                 print(j)
@@ -199,6 +200,7 @@ class VAE(nn.Module):
                 var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
                 vars_x.append(var_x)
+                print(var_x.shape, x.shape)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
