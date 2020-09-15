@@ -63,7 +63,7 @@ class VAE(nn.Module):
     def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
         #return torch.sigmoid(self.fc4(h3))
-        return self.fc41(h3), self.fc42(h3)
+        return F.relu(self.fc41(h3)), F.relu(self.fc42(h3))
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
