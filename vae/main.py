@@ -170,14 +170,14 @@ class VAE(nn.Module):
             
         return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
-    def sample_loss(self, x, mu_z, logvar_z):
+    def sample_loss(self, x, mu_z, logvar_z, num_samples):
         z = []
         bs = x.shape[0]
         var_z = torch.exp(logvar_z)
         Sigma = self.batch_diag(mu_z, var_z)
         
         dist_z = MultivariateNormal(mu_z, Sigma)
-        for i in range(2*mu_z.shape[1]):
+        for i in range(num_samples):
             z.append(dist_z.sample())
         
         K = len(z)       
@@ -301,6 +301,7 @@ def test(args, epoch):
     #UT_test_loss = torch.zeros(args.batch_size).to(device)
     #test_loss = torch.zeros(args.batch_size).to(device)
     bs = args.batch_size
+    true_loss = 0
     UT_test_loss = 0
     test_loss = 0
     with torch.no_grad():
@@ -311,8 +312,10 @@ def test(args, epoch):
             #recon_batch, mu, logvar = model(args, data)
             UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
             print('UT score: ', UT_test_loss)
-            test_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar)).item()
-            print('regular sampling score: ', test_loss)
+            reg_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
+            print('regular sampling score: ', reg_loss)
+            true_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 10000)).item()
+            print('true sampling score: ', true_loss)
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
@@ -322,15 +325,18 @@ def test(args, epoch):
 
     
     UT_score = torch.sum(UT_test_loss).item()
-    reg_loss = torch.sum(test_loss).item()
+    reg_score = torch.sum(reg_loss).item()
+    true_score = torch.sum(true_loss).item()
     UT_score /= len(test_loader.dataset)
-    reg_loss /= len(test_loader.dataset)
-    print('====> Test set score with regular sampling: {:.4f}'.format(reg_loss))
+    reg_score /= len(test_loader.dataset)
+    true_score /= len(test_loader.dataset)
+    print('====> Test set score with regular sampling: {:.4f}'.format(reg_score))
     print('====> Test set score with UT: {:.4f}'.format(UT_score))
+    print('====> True test set score: {:.4f}'.format(true_score))
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
+        #train(args, epoch)
         test(args, epoch)
         """
         with torch.no_grad():
