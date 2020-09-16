@@ -131,11 +131,8 @@ class VAE(nn.Module):
         z_exps = []
         means_x = []
         vars_x = []
-        j = 1
-        print(z[0].shape)
         with torch.no_grad():
             for sample in z:
-                print(j)
                 mu_x, logvar_x = self.decode(sample)
                 var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
@@ -144,7 +141,6 @@ class VAE(nn.Module):
                 z_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 x_exps.append(x_exp.unsqueeze(-1))
                 z_exps.append(z_exp.unsqueeze(-1))
-                j += 1
         
             x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
             z_exps_tensor = torch.cat(z_exps, dim=1).to(device)
@@ -154,7 +150,6 @@ class VAE(nn.Module):
             pq_sum_tensor = torch.zeros(bs).to(device)
         
             for inx, sample in enumerate(z):
-                print(inx)
                 mu_x = means_x[inx]
                 var_x = vars_x[inx]
                 #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
@@ -184,7 +179,6 @@ class VAE(nn.Module):
         dist_z = MultivariateNormal(mu_z, Sigma)
         for i in range(2*mu_z.shape[1]):
             z.append(dist_z.sample())
-        print(z[0].shape)
         
         K = len(z)       
         x_exps = []
@@ -193,10 +187,8 @@ class VAE(nn.Module):
         means_x = []
         vars_x = []
         
-        j = 1
         with torch.no_grad():
             for sample in z:
-                print(j)
                 mu_x, logvar_x = self.decode(sample)
                 var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
@@ -207,7 +199,6 @@ class VAE(nn.Module):
                 x_exps.append(x_exp.unsqueeze(-1))
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
-                j += 1
         
             x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
             z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
@@ -219,7 +210,6 @@ class VAE(nn.Module):
             pq_sum_tensor = torch.zeros(bs).to(device)
         
             for inx, sample in enumerate(z):
-                print(inx)
                 mu_x = means_x[inx]
                 var_x = vars_x[inx]
                 p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
