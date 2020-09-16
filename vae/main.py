@@ -297,19 +297,20 @@ def train(args, epoch, istrain=True):
 
 def test(args, epoch):
     model.eval()
-    UT_test_loss = torch.zeros(args.batch_size).to(device)
-    test_loss = torch.zeros(args.batch_size).to(device)
+    #UT_test_loss = torch.zeros(args.batch_size).to(device)
+    #test_loss = torch.zeros(args.batch_size).to(device)
+    UT_test_loss = 0
+    test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
-            UT_test_loss += model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)
+            UT_test_loss += torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
             print('UT score: ', UT_test_loss)
-            test_loss += model.sample_loss(data.view(-1, 784), mu, logvar)
+            test_loss += torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar)).item()
             print('regular sampling score: ', test_loss)
-            print('Finished batch #', int(len(test_loader.dataset)/args.batch_size))
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
