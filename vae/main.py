@@ -224,7 +224,7 @@ class VAE(nn.Module):
                 var_x = vars_x[inx]
                 p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
                 p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
-                q_z_x, diff_z2 = self.norm_dist_exp(sample, mu_z, var_z, z2_exps_max)
+                q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
                 diff = diff_x + diff_z1 + diff_z2
                 pq_sum = (p_x_z*p_z)/q_z_x
                 big_pq = torch.zeros_like(pq_sum).to(device)
