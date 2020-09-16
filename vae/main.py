@@ -183,7 +183,7 @@ class VAE(nn.Module):
         print(Sigma.shape)
         dist_z = MultivariateNormal(mu_z, Sigma)
         for i in range(2*mu_z.shape[1]):
-            z.append(dist_z.sample_n(bs))
+            z.append(dist_z.sample())
         print(z[0].shape)
         
         K = len(z)       
