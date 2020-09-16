@@ -303,7 +303,7 @@ def test(args, epoch):
     bs = args.batch_size
     true_loss = 0
     UT_test_loss = 0
-    test_loss = 0
+    reg_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
