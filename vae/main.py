@@ -299,6 +299,7 @@ def test(args, epoch):
     model.eval()
     #UT_test_loss = torch.zeros(args.batch_size).to(device)
     #test_loss = torch.zeros(args.batch_size).to(device)
+    bs = args.batch_size
     UT_test_loss = 0
     test_loss = 0
     with torch.no_grad():
@@ -307,9 +308,9 @@ def test(args, epoch):
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
-            UT_test_loss += torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
+            UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
             print('UT score: ', UT_test_loss)
-            test_loss += torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar)).item()
+            test_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar)).item()
             print('regular sampling score: ', test_loss)
             #if i == 0:
                # n = min(data.size(0), 8)
