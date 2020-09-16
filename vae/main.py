@@ -168,10 +168,10 @@ class VAE(nn.Module):
                         big_pq[i] = pq_sum[i]
                 pq_sum_tensor += big_pq
             
-                #C = torch.ones(bs).to(device)
-                #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
-                C = (-x.shape[1]/2)*math.log(2*math.pi)
-                D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
+            #C = torch.ones(bs).to(device)
+            #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+            C = (-x.shape[1]/2)*math.log(2*math.pi)
+            D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
             
         return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
@@ -233,9 +233,9 @@ class VAE(nn.Module):
                         big_pq[i] = pq_sum[i]
                 pq_sum_tensor += big_pq
             
-                #C = torch.ones(bs).to(device)
-                #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
-                C = (-x.shape[1]/2)*math.log(2*math.pi)
+            #C = torch.ones(bs).to(device)
+            #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
+            C = (-x.shape[1]/2)*math.log(2*math.pi)
             
         return C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor)
         
@@ -316,7 +316,9 @@ def test(args, epoch):
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
             UT_test_loss += model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)
+            print('UT score: ', UT_test_loss)
             test_loss += model.sample_loss(data.view(-1, 784), mu, logvar)
+            print('regular sampling score: ', test_loss)
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
