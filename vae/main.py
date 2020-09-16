@@ -180,7 +180,6 @@ class VAE(nn.Module):
         var_z = torch.exp(logvar_z)
         Sigma = self.batch_diag(mu_z, var_z)
         
-        print(Sigma.shape)
         dist_z = MultivariateNormal(mu_z, Sigma)
         for i in range(2*mu_z.shape[1]):
             z.append(dist_z.sample())
@@ -188,7 +187,8 @@ class VAE(nn.Module):
         
         K = len(z)       
         x_exps = []
-        z_exps = []
+        z1_exps = []
+        z2_exps = []
         means_x = []
         vars_x = []
         
@@ -200,7 +200,6 @@ class VAE(nn.Module):
                 var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
                 vars_x.append(var_x)
-                print(var_x.shape, x.shape)
                 x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
