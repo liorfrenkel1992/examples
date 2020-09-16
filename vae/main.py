@@ -272,19 +272,20 @@ def loss_function(recon_x, x, mu, logvar):
 
 def train(args, epoch, istrain=True):
     model.train()
+    bs = args.batch_size
+    UT_test_loss = 0
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
         mu, logvar = model.encode(data.view(-1, 784))
         z = model.unscented(mu, logvar)
-        for sample in z:
-            #recon_batch = model.decode(sample)
-            #recon_batch, mu, logvar = model(args, data)
-            loss = model.UT_sample_loss(recon_batch, z, mu, logvar)
-            loss.backward()
-            train_loss += loss.item()
-            optimizer.step()
+        #recon_batch = model.decode(sample)
+        #recon_batch, mu, logvar = model(args, data)
+        loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar))
+        loss.backward()
+        train_loss += loss.item()
+        optimizer.step()
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
@@ -329,7 +330,7 @@ def test(args, epoch):
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        #train(args, epoch)
+        train(args, epoch)
         test(args, epoch)
         """
         with torch.no_grad():
