@@ -247,9 +247,8 @@ class VAE(nn.Module):
         N = len(x_sigma)
         x_sigma = [torch.unsqueeze(point, 1) for point in x_sigma]
         pts = torch.cat(x_sigma, dim=1).to(device)
-        print(pts.shape)
         
-        x_mu = torch.mean(pts, dim=1)
+        x_mu = torch.mean(pts, dim=1, keepdim=True)
         print(x_mu.shape)
         diff = pts - x_mu
         print(diff.shape)
