@@ -318,9 +318,9 @@ def test(args, epoch):
     #UT_test_loss = torch.zeros(args.batch_size).to(device)
     #test_loss = torch.zeros(args.batch_size).to(device)
     bs = args.batch_size
-    true_loss = 0
+    true_test_loss = 0
     UT_test_loss = 0
-    reg_loss = 0
+    reg_test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
@@ -340,13 +340,13 @@ def test(args, epoch):
                 recon_batch1 = model.decode(sample1)
                 UT_test_loss += loss_function(recon_batch1, data, mu, logvar).item()
             UT_test_loss /= len(z1)
-            print('UT score: ', UT_test_loss)
+            print('UT loss: ', UT_test_loss)
             for inx2, sample2 in enumerate(z2):
                 print(inx2)
                 recon_batch2 = model.decode(sample2)
                 reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
             reg_test_loss /= len(z2)
-            print('regular sampling score: ', reg_test_loss)
+            print('regular sampling loss: ', reg_test_loss)
             
             z3 = []
             for j in range(10000):
@@ -356,7 +356,7 @@ def test(args, epoch):
                 recon_batch3 = model.decode(sample3)
                 true_test_loss += loss_function(recon_batch3, data, mu, logvar).item()
             true_test_loss /= len(z3)
-            print('true sampling score: ', true_test_loss)
+            print('true sampling loss: ', true_test_loss)
             
             """
             UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
