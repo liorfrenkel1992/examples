@@ -15,7 +15,7 @@ parser.add_argument('--use_UT', action='store_true', default=False,
                     help='the model uses unscented transformation for sampling')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
-parser.add_argument('--epochs', type=int, default=122, metavar='N',
+parser.add_argument('--epochs', type=int, default=1, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
@@ -91,7 +91,7 @@ class VAE(nn.Module):
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
-        varsqrt = math.sqrt(N)*torch.sqrt(var_diag)
+        varsqrt = torch.sqrt(N*var_diag)
         x_sigma = []
         
         for i in range(N):
