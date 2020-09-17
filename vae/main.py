@@ -95,7 +95,7 @@ class VAE(nn.Module):
         x_sigma = []
         
         for i in range(N):
-            print(varsqrt[:, i])
+            print(varsqrt[:, i].shape)
             x_sigma.append(mu + varsqrt[:, i])
 
         for i in range(N):
