@@ -95,6 +95,7 @@ class VAE(nn.Module):
         x_sigma = []
         
         for i in range(N):
+            print(varsqrt[:, i])
             x_sigma.append(mu + varsqrt[:, i])
 
         for i in range(N):
@@ -113,8 +114,6 @@ class VAE(nn.Module):
     
     def norm_dist_exp(self, x, mu, var):
         Sigma = self.batch_diag(x, var)
-        print(var)
-        print(Sigma)
         exp1 = torch.squeeze((-1/2)*torch.sum(torch.log(var), dim=1))
         exp2 = torch.squeeze(-(1/2)*torch.bmm(torch.bmm(torch.transpose((x - mu).unsqueeze(-1), 1, 2), torch.inverse(Sigma)), (x - mu).unsqueeze(-1)))
         return exp1 + exp2
