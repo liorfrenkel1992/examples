@@ -13,13 +13,13 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
 parser.add_argument('--use_UT', action='store_true', default=False,
                     help='the model uses unscented transformation for sampling')
-parser.add_argument('--batch-size', type=int, default=2, metavar='N',
+parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--epochs', type=int, default=1, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
-parser.add_argument('--seed', type=int, default=122, metavar='S',
+parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
@@ -318,6 +318,9 @@ def test(args, epoch):
     #UT_test_loss = torch.zeros(args.batch_size).to(device)
     #test_loss = torch.zeros(args.batch_size).to(device)
     bs = args.batch_size
+    true_loss = 0
+    UT_loss = 0
+    reg_loss = 0
     true_test_loss = 0
     UT_test_loss = 0
     reg_test_loss = 0
@@ -339,11 +342,13 @@ def test(args, epoch):
                 recon_batch1 = model.decode(sample1)
                 UT_test_loss += loss_function(recon_batch1, data, mu, logvar).item()
             UT_test_loss /= len(z1)
+            UT_loss += UT_test_loss
             print('UT loss: ', UT_test_loss)
             for inx2, sample2 in enumerate(z2):
                 recon_batch2 = model.decode(sample2)
                 reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
             reg_test_loss /= len(z2)
+            reg_loss += reg_test_loss
             print('regular sampling loss: ', reg_test_loss)
             
             z3 = []
@@ -353,6 +358,7 @@ def test(args, epoch):
                 recon_batch3 = model.decode(sample3)
                 true_test_loss += loss_function(recon_batch3, data, mu, logvar).item()
             true_test_loss /= len(z3)
+            true_loss += true_test_loss
             print('true sampling loss: ', true_test_loss)
             
             """
@@ -375,9 +381,9 @@ def test(args, epoch):
     reg_score = torch.sum(reg_loss).item()
     true_score = torch.sum(true_loss).item()
     """
-    UT_test_loss /= len(test_loader.dataset)
-    reg_test_loss /= len(test_loader.dataset)
-    true_test_loss /= len(test_loader.dataset)
+    UT_loss /= len(test_loader.dataset)
+    reg_loss /= len(test_loader.dataset)
+    true_loss /= len(test_loader.dataset)
     print('====> Test set loss with regular sampling: {:.4f}'.format(reg_test_loss))
     print('====> Test set loss with UT: {:.4f}'.format(UT_test_loss))
     print('====> True test set loss: {:.4f}'.format(true_test_loss))
