@@ -337,13 +337,13 @@ def test(args, epoch):
             
             for inx1, sample1 in enumerate(z1):
                 print(inx1)
-                recon_batch1 = self.decode(sample1)
+                recon_batch1 = model.decode(sample1)
                 UT_test_loss += loss_function(recon_batch1, data, mu, logvar).item()
             UT_test_loss /= len(z1)
             print('UT score: ', UT_test_loss)
             for inx2, sample2 in enumerate(z2):
                 print(inx2)
-                recon_batch2 = self.decode(sample2)
+                recon_batch2 = model.decode(sample2)
                 reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
             reg_test_loss /= len(z2)
             print('regular sampling score: ', reg_test_loss)
@@ -353,7 +353,7 @@ def test(args, epoch):
                 z3.append(dist_z.sample())
             for inx3, sample3 in enumerate(z3):
                 print(inx3)
-                recon_batch3 = self.decode(sample3)
+                recon_batch3 = model..decode(sample3)
                 true_test_loss += loss_function(recon_batch3, data, mu, logvar).item()
             true_test_loss /= len(z3)
             print('true sampling score: ', true_test_loss)
