@@ -245,7 +245,7 @@ class VAE(nn.Module):
         #an arbitrary non-linear transformation.
         #Returns a flattened 1d array for x.
         N = len(x_sigma)
-        pts = torch.cat(x_sigma, dim=1).to(device)
+        pts = torch.cat(x_sigma, dim=2).to(device)
         print(pts.shape)
         
         x_mu = torch.mean(pts, dim=1)
