@@ -95,7 +95,6 @@ class VAE(nn.Module):
         x_sigma = []
         
         for i in range(N):
-            print(varsqrt[:, i].shape)
             x_sigma.append(mu + varsqrt[:, i])
 
         for i in range(N):
@@ -246,11 +245,14 @@ class VAE(nn.Module):
         #an arbitrary non-linear transformation.
         #Returns a flattened 1d array for x.
         N = len(x_sigma)
-        pts = torch.tensor(x_sigma)
-
-        x_mu = torch.mean(pts, axis=0)
+        pts = torch.cat(x_sigma, dim=1).to(device)
+        print(pts.shape)
+        
+        x_mu = torch.mean(pts, dim=1)
+        print(x_mu.shape)
         diff = pts - x_mu
-        x_cov = torch.dot(diff.T, diff) / N
+        print(diff.shape)
+        x_cov = torch.dot(torch.transpose(diff, 1, 2), diff) / N
         return x_mu, x_cov
   
 
@@ -319,6 +321,8 @@ def test(args, epoch):
             data = data.to(device)
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
+            pts_mu, pts_var = model.unscented_mu_cov(z)
+            print(pts_mu, pts_var)
             #recon_batch, mu, logvar = model(args, data)
             UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
             print('UT score: ', UT_test_loss)
