@@ -257,15 +257,17 @@ class VAE(nn.Module):
 
     def forward(self, x):
         mu, logvar = self.encode(x.view(-1, 784))
-        #z = self.reparameterize(mu, logvar)
+        z = self.reparameterize(mu, logvar)
         #z = self.unscented(mu, logvar)
+        """
         bs = x.shape[0]
         var = torch.exp(logvar)
         Sigma = self.batch_diag(mu, var)
         
         dist_z = MultivariateNormal(mu, Sigma)
         z_i = dist_z.sample()
-        recon_x = self.decode(z_i)
+        """
+        recon_x = self.decode(z)
         return recon_x, mu, logvar
 
 
@@ -327,9 +329,9 @@ def test(args, epoch):
             z1 = model.unscented(mu, logvar)
             
             z2 = []
-            var_z = torch.exp(logvar)
-            Sigma = model.batch_diag(mu_z, var_z)
-            dist_z = MultivariateNormal(mu_z, Sigma)
+            var = torch.exp(logvar)
+            Sigma = model.batch_diag(mu, var)
+            dist_z = MultivariateNormal(mu, Sigma)
             for j in range(2*mu.shape[1]):
                 z2.append(dist_z.sample())
             
