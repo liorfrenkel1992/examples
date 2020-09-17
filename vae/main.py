@@ -48,8 +48,9 @@ class VAE(nn.Module):
         self.fc21 = nn.Linear(400, 20)
         self.fc22 = nn.Linear(400, 20)
         self.fc3 = nn.Linear(20, 400)
-        self.fc41 = nn.Linear(400, 784)
-        self.fc42 = nn.Linear(400, 784)
+        self.fc4 = nn.Linear(400, 784)
+        #self.fc41 = nn.Linear(400, 784)
+        #self.fc42 = nn.Linear(400, 784)
 
     def encode(self, x):
         h1 = F.relu(self.fc1(x))
@@ -62,8 +63,8 @@ class VAE(nn.Module):
 
     def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
-        #return torch.sigmoid(self.fc4(h3))
-        return self.fc41(h3), self.fc42(h3)
+        return torch.sigmoid(self.fc4(h3))
+        #return self.fc41(h3), self.fc42(h3)
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -254,13 +255,18 @@ class VAE(nn.Module):
         return x_mu, x_cov
   
 
-    def forward(self, args, x):
+    def forward(self, x):
         mu, logvar = self.encode(x.view(-1, 784))
         #z = self.reparameterize(mu, logvar)
-        z = self.unscented(mu, logvar)
-        for sample in z:
-            recon_x = self.decode(sample)
-        return recon_x, mu, logvar, z
+        #z = self.unscented(mu, logvar)
+        bs = x.shape[0]
+        var = torch.exp(logvar)
+        Sigma = self.batch_diag(mu, var)
+        
+        dist_z = MultivariateNormal(mu_z, Sigma)
+        z_i = dist_z.sample()
+        recon_x = self.decode(z_i)
+        return recon_x, mu, logvar
 
 
 model = VAE(args).to(device)
@@ -283,16 +289,15 @@ def loss_function(recon_x, x, mu, logvar):
 def train(args, epoch, istrain=True):
     model.train()
     bs = args.batch_size
-    UT_test_loss = 0
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        mu, logvar = model.encode(data.view(-1, 784))
-        z = model.unscented(mu, logvar)
-        #recon_batch = model.decode(sample)
-        #recon_batch, mu, logvar = model(args, data)
-        loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar))
+        recon_batch, mu, logvar = model(data)
+        #mu, logvar = model.encode(data.view(-1, 784))
+        #z = model.unscented(mu, logvar)
+        #loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar))
+        loss = loss_function(recon_batch, data, mu, logvar)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -317,16 +322,48 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
+            recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
-            z = model.unscented(mu, logvar)
-            #pts_mu, pts_var = model.unscented_mu_cov(z)
-            #recon_batch, mu, logvar = model(args, data)
+            z1 = model.unscented(mu, logvar)
+            
+            z2 = []
+            var_z = torch.exp(logvar)
+            Sigma = model.batch_diag(mu_z, var_z)
+            dist_z = MultivariateNormal(mu_z, Sigma)
+            for j in range(2*mu.shape[1]):
+                z2.append(dist_z.sample())
+            
+            for inx1, sample1 in enumerate(z1):
+                print(inx1)
+                recon_batch1 = self.decode(sample1)
+                UT_test_loss += loss_function(recon_batch1, data, mu, logvar).item()
+            UT_test_loss /= len(z1)
+            print('UT score: ', UT_test_loss)
+            for inx2, sample2 in enumerate(z2):
+                print(inx2)
+                recon_batch2 = self.decode(sample2)
+                reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
+            reg_test_loss /= len(z2)
+            print('regular sampling score: ', reg_test_loss)
+            
+            z3 = []
+            for j in range(10000):
+                z3.append(dist_z.sample())
+            for inx3, sample3 in enumerate(z3):
+                print(inx3)
+                recon_batch3 = self.decode(sample3)
+                true_test_loss += loss_function(recon_batch3, data, mu, logvar).item()
+            true_test_loss /= len(z3)
+            print('true sampling score: ', true_test_loss)
+            
+            """
             UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
             print('UT score: ', UT_test_loss)
             reg_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
             print('regular sampling score: ', reg_loss)
             true_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 10000)).item()
             print('true sampling score: ', true_loss)
+            """
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
@@ -334,20 +371,21 @@ def test(args, epoch):
                 #save_image(comparison.cpu(),
                          #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
-    
+    """
     UT_score = torch.sum(UT_test_loss).item()
     reg_score = torch.sum(reg_loss).item()
     true_score = torch.sum(true_loss).item()
-    UT_score /= len(test_loader.dataset)
-    reg_score /= len(test_loader.dataset)
-    true_score /= len(test_loader.dataset)
-    print('====> Test set score with regular sampling: {:.4f}'.format(reg_score))
-    print('====> Test set score with UT: {:.4f}'.format(UT_score))
-    print('====> True test set score: {:.4f}'.format(true_score))
+    """
+    UT_test_loss /= len(test_loader.dataset)
+    reg_test_loss /= len(test_loader.dataset)
+    true_test_loss /= len(test_loader.dataset)
+    print('====> Test set loss with regular sampling: {:.4f}'.format(reg_test_loss))
+    print('====> Test set loss with UT: {:.4f}'.format(UT_test_loss))
+    print('====> True test set loss: {:.4f}'.format(true_test_loss))
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
-        #train(args, epoch)
+        train(args, epoch)
         test(args, epoch)
         """
         with torch.no_grad():
