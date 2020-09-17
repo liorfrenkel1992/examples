@@ -263,7 +263,7 @@ class VAE(nn.Module):
         var = torch.exp(logvar)
         Sigma = self.batch_diag(mu, var)
         
-        dist_z = MultivariateNormal(mu_z, Sigma)
+        dist_z = MultivariateNormal(mu, Sigma)
         z_i = dist_z.sample()
         recon_x = self.decode(z_i)
         return recon_x, mu, logvar
