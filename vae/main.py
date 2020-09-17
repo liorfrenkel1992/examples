@@ -257,8 +257,8 @@ class VAE(nn.Module):
 
     def forward(self, x):
         mu, logvar = self.encode(x.view(-1, 784))
-        #z = self.reparameterize(mu, logvar)
-        z = self.unscented(mu, logvar)
+        z = self.reparameterize(mu, logvar)
+        #z = self.unscented(mu, logvar)
         """
         bs = x.shape[0]
         var = torch.exp(logvar)
