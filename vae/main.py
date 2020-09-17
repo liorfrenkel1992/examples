@@ -310,6 +310,12 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
+            j=0
+            for image in data:
+                n = min(data.size(0), 8)
+                save_image(image.cpu(),
+                         '/data/vae/ut/image_' + str(j) + '.png', nrow=n)
+                j+=1
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
