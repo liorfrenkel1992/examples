@@ -15,7 +15,7 @@ parser.add_argument('--use_UT', action='store_true', default=False,
                     help='the model uses unscented transformation for sampling')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
-parser.add_argument('--epochs', type=int, default=1, metavar='N',
+parser.add_argument('--epochs', type=int, default=10, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
@@ -343,14 +343,14 @@ def test(args, epoch):
                 UT_test_loss += loss_function(recon_batch1, data, mu, logvar).item()
             UT_test_loss /= len(z1)
             UT_loss += UT_test_loss
-            print('UT loss: ', UT_test_loss)
+            print('UT loss: ', UT_test_loss/args.batch_size)
             UT_test_loss = 0
             for inx2, sample2 in enumerate(z2):
                 recon_batch2 = model.decode(sample2)
                 reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
             reg_test_loss /= len(z2)
             reg_loss += reg_test_loss
-            print('regular sampling loss: ', reg_test_loss)
+            print('regular sampling loss: ', reg_test_loss/args.batch_size)
             reg_test_loss = 0
             
             z3 = []
@@ -361,7 +361,7 @@ def test(args, epoch):
                 true_test_loss += loss_function(recon_batch3, data, mu, logvar).item()
             true_test_loss /= len(z3)
             true_loss += true_test_loss
-            print('true sampling loss: ', true_test_loss)
+            print('true sampling loss: ', true_test_loss/args.batch_size)
             true_test_loss = 0
             
             """
