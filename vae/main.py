@@ -19,7 +19,7 @@ parser.add_argument('--epochs', type=int, default=1, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
-parser.add_argument('--seed', type=int, default=1, metavar='S',
+parser.add_argument('--seed', type=int, default=122, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
@@ -316,12 +316,6 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            j=0
-            for image in data:
-                n = min(data.size(0), 8)
-                save_image(image.cpu(),
-                         '/data/vae/ut/image_' + str(j) + '.png', nrow=n)
-                j+=1
             mu, logvar = model.encode(data.view(-1, 784))
             z = model.unscented(mu, logvar)
             #recon_batch, mu, logvar = model(args, data)
