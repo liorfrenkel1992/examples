@@ -91,7 +91,7 @@ class VAE(nn.Module):
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
-        varsqrt = math.sqrt(N)*var_diag
+        varsqrt = math.sqrt(N)*torch.sqrt(var_diag)
         x_sigma = []
         
         for i in range(N):
@@ -158,12 +158,10 @@ class VAE(nn.Module):
                 p_z, diff_z = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z_exps_max)
                 diff = diff_x + diff_z
                 pq_sum = p_x_z*p_z
-                print(pq_sum)
                 big_pq = torch.zeros_like(pq_sum).to(device)
                 for i in range(bs):
                     if diff[i] >= -10:
                         big_pq[i] = pq_sum[i]
-                print(big_pq)
                 pq_sum_tensor += big_pq
             
             #C = torch.ones(bs).to(device)
