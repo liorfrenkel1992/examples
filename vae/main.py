@@ -344,12 +344,14 @@ def test(args, epoch):
             UT_test_loss /= len(z1)
             UT_loss += UT_test_loss
             print('UT loss: ', UT_test_loss)
+            UT_test_loss = 0
             for inx2, sample2 in enumerate(z2):
                 recon_batch2 = model.decode(sample2)
                 reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
             reg_test_loss /= len(z2)
             reg_loss += reg_test_loss
             print('regular sampling loss: ', reg_test_loss)
+            reg_test_loss = 0
             
             z3 = []
             for j in range(10000):
@@ -360,6 +362,7 @@ def test(args, epoch):
             true_test_loss /= len(z3)
             true_loss += true_test_loss
             print('true sampling loss: ', true_test_loss)
+            true_test_loss = 0
             
             """
             UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
