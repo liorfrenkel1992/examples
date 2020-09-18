@@ -334,10 +334,10 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            recon_batch, mu, logvar = model(data)
-            #mu, logvar = model.encode(data.view(-1, 784))
+            #recon_batch, mu, logvar = model(data)
+            mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
-            
+            """
             z2 = []
             var = torch.exp(logvar)
             Sigma = model.batch_diag(mu, var)
@@ -370,15 +370,21 @@ def test(args, epoch):
             true_loss += true_test_loss
             print('true sampling loss: ', true_test_loss/args.batch_size)
             true_test_loss = 0
+            """
             
-            """
-            UT_test_loss += (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar)).item()
+            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar)).item()
+            UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
-            reg_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
-            print('regular sampling score: ', reg_loss)
-            true_loss += (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 10000)).item()
-            print('true sampling score: ', true_loss)
-            """
+            UT_test_loss = 0
+            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
+            reg_loss += reg_test_loss
+            print('regular sampling score: ', reg_test_loss)
+            reg_test_loss = 0
+            true_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 10000)).item()
+            true_loss += true_test_loss
+            print('true sampling score: ', true_test_loss)
+            true_test_loss = 0
+            
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
@@ -387,22 +393,22 @@ def test(args, epoch):
                          #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
     """
-    UT_score = torch.sum(UT_test_loss).item()
-    reg_score = torch.sum(reg_loss).item()
-    true_score = torch.sum(true_loss).item()
+    UT_loss = torch.sum(UT_loss).item()
+    reg_loss = torch.sum(reg_loss).item()
+    true_loss = torch.sum(true_loss).item()
     """
-    UT_loss /= len(test_loader.dataset)
-    reg_loss /= len(test_loader.dataset)
-    true_loss /= len(test_loader.dataset)
+    UT_loss /= (len(test_loader.dataset)/bs)
+    reg_loss /= (len(test_loader.dataset)/bs)
+    true_loss /= (len(test_loader.dataset)/bs)
     print('====> Test set loss with regular sampling: {:.4f}'.format(reg_loss))
     print('====> Test set loss with UT: {:.4f}'.format(UT_loss))
     print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    #for epoch in range(1, args.epochs + 1):
-        #train(args, epoch)
-    PATH = '/data/vae/results_regular.pth'
-    #torch.save(model.state_dict(), PATH)
+    for epoch in range(1, args.epochs + 1):
+        train(args, epoch)
+    PATH = '/data/vae/results_logp.pth'
+    torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
     """
