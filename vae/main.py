@@ -404,7 +404,7 @@ if __name__ == "__main__":
     PATH = '/data/vae/results_regular.pth'
     #torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
-    test(args, epoch)
+    test(args, 10)
     """
     with torch.no_grad():
         sample = torch.randn(64, 20).to(device)
