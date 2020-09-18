@@ -48,9 +48,9 @@ class VAE(nn.Module):
         self.fc21 = nn.Linear(400, 20)
         self.fc22 = nn.Linear(400, 20)
         self.fc3 = nn.Linear(20, 400)
-        self.fc4 = nn.Linear(400, 784)
-        #self.fc41 = nn.Linear(400, 784)
-        #self.fc42 = nn.Linear(400, 784)
+        #self.fc4 = nn.Linear(400, 784)
+        self.fc41 = nn.Linear(400, 784)
+        self.fc42 = nn.Linear(400, 784)
 
     def encode(self, x):
         h1 = F.relu(self.fc1(x))
@@ -63,8 +63,8 @@ class VAE(nn.Module):
 
     def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
-        return torch.sigmoid(self.fc4(h3))
-        #return self.fc41(h3), self.fc42(h3)
+        #return torch.sigmoid(self.fc4(h3))
+        return self.fc41(h3), self.fc42(h3)
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
