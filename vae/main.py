@@ -387,14 +387,17 @@ def test(args, epoch):
     UT_loss /= len(test_loader.dataset)
     reg_loss /= len(test_loader.dataset)
     true_loss /= len(test_loader.dataset)
-    print('====> Test set loss with regular sampling: {:.4f}'.format(reg_test_loss))
-    print('====> Test set loss with UT: {:.4f}'.format(UT_test_loss))
-    print('====> True test set loss: {:.4f}'.format(true_test_loss))
+    print('====> Test set loss with regular sampling: {:.4f}'.format(reg_loss))
+    print('====> Test set loss with UT: {:.4f}'.format(UT_loss))
+    print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
     for epoch in range(1, args.epochs + 1):
         train(args, epoch)
-        test(args, epoch)
+    PATH = '/data/vae'
+    torch.save(model.state_dict(), PATH)
+    model.load_state_dict(torch.load(PATH))
+    test(args, epoch)
         """
         with torch.no_grad():
             sample = torch.randn(64, 20).to(device)
