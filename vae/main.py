@@ -48,9 +48,9 @@ class VAE(nn.Module):
         self.fc21 = nn.Linear(400, 20)
         self.fc22 = nn.Linear(400, 20)
         self.fc3 = nn.Linear(20, 400)
-        #self.fc4 = nn.Linear(400, 784)
-        self.fc41 = nn.Linear(400, 784)
-        self.fc42 = nn.Linear(400, 784)
+        self.fc4 = nn.Linear(400, 784)
+        #self.fc41 = nn.Linear(400, 784)
+        #self.fc42 = nn.Linear(400, 784)
 
     def encode(self, x):
         h1 = F.relu(self.fc1(x))
@@ -63,8 +63,8 @@ class VAE(nn.Module):
 
     def decode(self, z, istrain=True):
         h3 = F.relu(self.fc3(z))
-        #return torch.sigmoid(self.fc4(h3))
-        return self.fc41(h3), self.fc42(h3)
+        return torch.sigmoid(self.fc4(h3))
+        #return self.fc41(h3), self.fc42(h3)
       
     def svdsqrtm(self, x, eps=1e-15):
         #Return the matrix square root of x calculating using the svd.
@@ -293,18 +293,11 @@ def train(args, epoch, istrain=True):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        #recon_batch, mu, logvar = model(data)
-        mu, logvar = model.encode(data.view(-1, 784))
-        z2 = []
-        var = torch.exp(logvar)
-        Sigma = model.batch_diag(mu, var)
-        dist_z = MultivariateNormal(mu, Sigma)
-        for j in range(2*mu.shape[1]):
-            z2.append(dist_z.sample())
-        
+        recon_batch, mu, logvar = model(data)
+        #mu, logvar = model.encode(data.view(-1, 784))
         #z = model.unscented(mu, logvar)
-        loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1]))
-        #loss = loss_function(recon_batch, data, mu, logvar)
+        #loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1]))
+        loss = loss_function(recon_batch, data, mu, logvar)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -335,7 +328,7 @@ def test(args, epoch):
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
-            """
+            
             z2 = []
             var = torch.exp(logvar)
             Sigma = model.batch_diag(mu, var)
@@ -368,8 +361,8 @@ def test(args, epoch):
             true_loss += true_test_loss
             print('true sampling loss: ', true_test_loss/args.batch_size)
             true_test_loss = 0
-            """
             
+            """
             UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar)).item()
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
@@ -382,7 +375,7 @@ def test(args, epoch):
             true_loss += true_test_loss
             print('true sampling score: ', true_test_loss)
             true_test_loss = 0
-            
+            """
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
@@ -395,9 +388,9 @@ def test(args, epoch):
     reg_loss = torch.sum(reg_loss).item()
     true_loss = torch.sum(true_loss).item()
     """
-    UT_loss /= (len(test_loader.dataset)/bs)
-    reg_loss /= (len(test_loader.dataset)/bs)
-    true_loss /= (len(test_loader.dataset)/bs)
+    UT_loss /= len(test_loader.dataset)
+    reg_loss /= len(test_loader.dataset)
+    true_loss /= len(test_loader.dataset)
     print('====> Test set loss with regular sampling: {:.4f}'.format(reg_loss))
     print('====> Test set loss with UT: {:.4f}'.format(UT_loss))
     print('====> True test set loss: {:.4f}'.format(true_loss))
