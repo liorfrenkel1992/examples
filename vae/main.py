@@ -398,10 +398,10 @@ if __name__ == "__main__":
     torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, epoch)
-        """
-        with torch.no_grad():
-            sample = torch.randn(64, 20).to(device)
-            sample = model.decode(sample).cpu()
-            save_image(sample.view(64, 1, 28, 28),
-                       'results/sample_' + str(epoch) + '.png')
-        """
+    """
+    with torch.no_grad():
+        sample = torch.randn(64, 20).to(device)
+        sample = model.decode(sample).cpu()
+        save_image(sample.view(64, 1, 28, 28),
+                   'results/sample_' + str(epoch) + '.png')
+    """
