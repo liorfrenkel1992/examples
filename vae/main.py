@@ -177,7 +177,7 @@ class VAE(nn.Module):
             C = (-x.shape[1]/2)*math.log(2*math.pi)
             #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor)
+        return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
     def sample_loss(self, x, mu_z, logvar_z, num_samples):
@@ -237,7 +237,7 @@ class VAE(nn.Module):
             #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
             C = (-x.shape[1]/2)*math.log(2*math.pi)
             
-        return C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor)
+        return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         
 
         
@@ -295,11 +295,18 @@ def train(args, epoch, istrain=True):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
-        recon_batch, mu, logvar = model(data)
-        #mu, logvar = model.encode(data.view(-1, 784))
+        #recon_batch, mu, logvar = model(data)
+        mu, logvar = model.encode(data.view(-1, 784))
+        z2 = []
+        var = torch.exp(logvar)
+        Sigma = model.batch_diag(mu, var)
+        dist_z = MultivariateNormal(mu, Sigma)
+        for j in range(2*mu.shape[1]):
+            z2.append(dist_z.sample())
+        
         #z = model.unscented(mu, logvar)
-        #loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z, mu, logvar))
-        loss = loss_function(recon_batch, data, mu, logvar)
+        loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1]))
+        #loss = loss_function(recon_batch, data, mu, logvar)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -328,7 +335,7 @@ def test(args, epoch):
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
             recon_batch, mu, logvar = model(data)
-            mu, logvar = model.encode(data.view(-1, 784))
+            #mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
             
             z2 = []
@@ -392,10 +399,10 @@ def test(args, epoch):
     print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
+    #for epoch in range(1, args.epochs + 1):
+        #train(args, epoch)
     PATH = '/data/vae/results_regular.pth'
-    torch.save(model.state_dict(), PATH)
+    #torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, epoch)
     """
