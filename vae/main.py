@@ -91,10 +91,12 @@ class VAE(nn.Module):
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         var = torch.exp(logvar)
+        print(var)
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt(N*var_diag)
+        print(varsqrt)
         x_sigma = []
         
         for i in range(N):
@@ -137,7 +139,6 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
-        print(z[0][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
@@ -208,7 +209,6 @@ class VAE(nn.Module):
         means_x = []
         #vars_x = []
         
-        print(z[0][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
