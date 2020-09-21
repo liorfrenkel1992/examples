@@ -152,13 +152,13 @@ class VAE(nn.Module):
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
                
+        print(z2_exp)
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
         z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
-        print(z2_exps_tensor[0])
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -229,7 +229,6 @@ class VAE(nn.Module):
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
-        print(z2_exps_tensor[0])
           
         pq_sum_tensor = torch.zeros(bs).to(device)
         
