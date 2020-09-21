@@ -55,7 +55,7 @@ class VAE(nn.Module):
     def encode(self, x):
         #h1 = F.relu(self.fc1(x))
         h1 = torch.tanh(self.fc1(x))
-        return self.fc21(h1), torch.exp(self.fc22(h1))
+        return self.fc21(h1), self.fc22(h1)
         
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5*logvar)
@@ -127,10 +127,10 @@ class VAE(nn.Module):
         
         return torch.exp(diff), diff
     
-    def UT_sample_loss(self, x, z, mu_z, var_z):
+    def UT_sample_loss(self, x, z, mu_z, logvar_z):
         K = len(z)       
         bs = x.shape[0]
-        #var_z = torch.exp(logvar_z)
+        var_z = torch.exp(logvar_z)
         #x_exps = []
         z1_exps = []
         z2_exps = []
@@ -186,10 +186,10 @@ class VAE(nn.Module):
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
-    def sample_loss(self, x, mu_z, var_z, num_samples):
+    def sample_loss(self, x, mu_z, logvar_z, num_samples):
         z = []
         bs = x.shape[0]
-        #var_z = torch.exp(logvar_z)
+        var_z = torch.exp(logvar_z)
         Sigma = self.batch_diag(mu_z, var_z)
         
         dist_z = MultivariateNormal(mu_z, Sigma)
@@ -266,8 +266,8 @@ class VAE(nn.Module):
   
 
     def forward(self, x):
-        mu, var = self.encode(x.view(-1, 784))
-        z = self.reparameterize(mu, var)
+        mu, logvar = self.encode(x.view(-1, 784))
+        z = self.reparameterize(mu, logvar)
         #z = self.unscented(mu, logvar)
         """
         bs = x.shape[0]
@@ -278,7 +278,7 @@ class VAE(nn.Module):
         z = dist_z.sample()
         """
         recon_x = self.decode(z)
-        return recon_x, mu, var
+        return recon_x, mu, logvar
 
 
 model = VAE(args).to(device)
@@ -308,11 +308,11 @@ def train(args, epoch, istrain=True):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = preprocess(data).to(device)
         optimizer.zero_grad()
-        recon_batch, mu, var = model(data)
+        recon_batch, mu, logvar = model(data)
         #mu, logvar = model.encode(data.view(-1, 784))
         #z = model.unscented(mu, logvar)
         #loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1]))
-        loss = loss_function(recon_batch, data, mu, var)
+        loss = loss_function(recon_batch, data, mu, logvar)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -341,9 +341,9 @@ def test(args, epoch):
         for i, (data, _) in enumerate(test_loader):
             data = preprocess(data).to(device)            
             #recon_batch, mu, logvar = model(data)
-            mu, var = model.encode(data.view(-1, 784))
+            mu, logvar = model.encode(data.view(-1, 784))
             
-            z1 = model.unscented(mu, var)
+            z1 = model.unscented(mu, logvar)
             """
             z2 = []
             #var = torch.exp(logvar)
@@ -379,15 +379,15 @@ def test(args, epoch):
             true_test_loss = 0
             """
             
-            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, var)).item()
+            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar)).item()
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
-            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, var, 2*mu.shape[1])).item()
+            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
             reg_loss += reg_test_loss
             print('regular sampling score: ', reg_test_loss)
             reg_test_loss = 0
-            true_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, var, 10000)).item()
+            true_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 10000)).item()
             true_loss += true_test_loss
             print('true sampling score: ', true_test_loss)
             true_test_loss = 0
@@ -407,10 +407,10 @@ def test(args, epoch):
     print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    #for epoch in range(1, args.epochs + 1):
-        #train(args, epoch)
+    for epoch in range(1, args.epochs + 1):
+        train(args, epoch)
     PATH = '/data/vae/results_regular.pth'
-    #torch.save(model.state_dict(), PATH)
+    torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
     """
