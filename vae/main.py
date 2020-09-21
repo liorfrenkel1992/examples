@@ -98,10 +98,10 @@ class VAE(nn.Module):
         x_sigma = []
         
         for i in range(N):
-            x_sigma.append(mu + varsqrt[:][i])
+            x_sigma.append(mu + varsqrt[:, i])
 
         for i in range(N):
-            x_sigma.append(mu - varsqrt[:][i])
+            x_sigma.append(mu - varsqrt[:, i])
         
         return x_sigma
     
@@ -158,6 +158,7 @@ class VAE(nn.Module):
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
+        print(z[0][0])
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -170,7 +171,6 @@ class VAE(nn.Module):
             p_x_z = torch.exp(diff_x)
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
-            print(q_z_x)
             #q_z_x = torch.exp(self.norm_dist_exp(sample, mu_z, var_z))
             diff = diff_x + diff_z1 - diff_z2
             #diff = diff_x + diff_z1
@@ -207,7 +207,7 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
-        
+        print(z[0][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
