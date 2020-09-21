@@ -96,7 +96,7 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt(N*var_diag)
-        print(varsqrt[0])
+        print(varsqrt[0][0])
         x_sigma = []
         
         for i in range(N):
