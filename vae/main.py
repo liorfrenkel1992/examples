@@ -26,7 +26,7 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-#torch.manual_seed(args.seed)
+torch.manual_seed(args.seed)
 
 device = torch.device("cuda" if args.cuda else "cpu")
 
@@ -171,6 +171,7 @@ class VAE(nn.Module):
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             #q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
             q_z_x = torch.exp(self.norm_dist_exp(sample, mu_z, var_z))
+            print(q_z_x)
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_x + diff_z1
             pq_sum = (p_x_z*p_z)/q_z_x
