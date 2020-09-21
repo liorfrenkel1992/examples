@@ -132,6 +132,7 @@ class VAE(nn.Module):
         K = len(z)       
         bs = x.shape[0]
         var_z = torch.exp(logvar_z)
+        print(var_z)
         x_exps = []
         z1_exps = []
         z2_exps = []
@@ -192,6 +193,7 @@ class VAE(nn.Module):
         z = []
         bs = x.shape[0]
         var_z = torch.exp(logvar_z)
+        print(var_z)
         Sigma = self.batch_diag(mu_z, var_z)
         
         dist_z = MultivariateNormal(mu_z, Sigma)
