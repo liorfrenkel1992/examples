@@ -170,7 +170,7 @@ class VAE(nn.Module):
             p_x_z = torch.exp(torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1) - x_exps_max)
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
-            print(q_z_x)
+            print(diff_z2)
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_z1 - diff_z2
             pq_sum = (p_x_z*p_z)/q_z_x
@@ -237,6 +237,7 @@ class VAE(nn.Module):
             p_x_z = torch.exp(torch.sum(x*torch.log(mu_x) + (1 - x)*torch.log(1 - mu_x), dim=1) - x_exps_max)
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
+            print(diff_z2)
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_z1 - diff_z2
             pq_sum = (p_x_z*p_z)/q_z_x
