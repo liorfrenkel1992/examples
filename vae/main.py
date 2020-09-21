@@ -63,7 +63,7 @@ class VAE(nn.Module):
         return mu + eps*std
 
     def decode(self, z, istrain=True):
-        h3 = F.tanh(self.fc3(x))
+        h3 = F.tanh(self.fc3(z))
         return torch.sigmoid(self.fc4(h3))
         #return self.fc41(h3), self.fc42(h3)
       
