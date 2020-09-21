@@ -53,8 +53,8 @@ class VAE(nn.Module):
         #self.fc42 = nn.Linear(400, 784)
 
     def encode(self, x):
-        #h1 = F.relu(self.fc1(x))
-        h1 = torch.tanh(self.fc1(x))
+        h1 = F.relu(self.fc1(x))
+        #h1 = torch.tanh(self.fc1(x))
         return self.fc21(h1), self.fc22(h1)
         
     def reparameterize(self, mu, logvar):
@@ -63,7 +63,8 @@ class VAE(nn.Module):
         return mu + eps*std
 
     def decode(self, z, istrain=True):
-        h3 = torch.tanh(self.fc3(z))
+        h3 = F.relu(self.fc3(z))
+        #h3 = torch.tanh(self.fc3(z))
         return torch.sigmoid(self.fc4(h3))
         #return self.fc41(h3), self.fc42(h3)
       
@@ -306,8 +307,8 @@ def train(args, epoch, istrain=True):
     bs = args.batch_size
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
-        #data = preprocess(data).to(device)
-        data = data.to(device)
+        data = preprocess(data).to(device)
+        #data = data.to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
         #mu, logvar = model.encode(data.view(-1, 784))
@@ -340,8 +341,8 @@ def test(args, epoch):
     reg_test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
-            #data = preprocess(data).to(device)
-            data = data.to(device)
+            data = preprocess(data).to(device)
+            #data = data.to(device)
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             
