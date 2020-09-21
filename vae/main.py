@@ -306,7 +306,8 @@ def train(args, epoch, istrain=True):
     bs = args.batch_size
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
-        data = preprocess(data).to(device)
+        #data = preprocess(data).to(device)
+        data = data.to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
         #mu, logvar = model.encode(data.view(-1, 784))
@@ -339,7 +340,8 @@ def test(args, epoch):
     reg_test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
-            data = preprocess(data).to(device)            
+            #data = preprocess(data).to(device)
+            data = data.to(device)
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             
