@@ -137,10 +137,6 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
-        print(mu_z[0])
-        print(z[0][0])
-        print(z[1][0])
-        print(z[2][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
@@ -400,11 +396,12 @@ def test(args, epoch):
             reg_loss += reg_test_loss
             print('regular sampling score: ', reg_test_loss)
             reg_test_loss = 0
+            """
             true_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 10000)).item()
             true_loss += true_test_loss
             print('true sampling score: ', true_test_loss)
             true_test_loss = 0
-            
+            """
             #if i == 0:
                # n = min(data.size(0), 8)
                 #comparison = torch.cat([data[:n],
@@ -414,10 +411,10 @@ def test(args, epoch):
 
     UT_loss /= len(test_loader.dataset)
     reg_loss /= len(test_loader.dataset)
-    true_loss /= len(test_loader.dataset)
+    #true_loss /= len(test_loader.dataset)
     print('====> Test set loss with regular sampling: {:.4f}'.format(reg_loss))
     print('====> Test set loss with UT: {:.4f}'.format(UT_loss))
-    print('====> True test set loss: {:.4f}'.format(true_loss))
+    #print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
     #for epoch in range(1, args.epochs + 1):
