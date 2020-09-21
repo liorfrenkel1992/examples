@@ -98,10 +98,10 @@ class VAE(nn.Module):
         x_sigma = []
         
         for i in range(N):
-            x_sigma.append(mu + varsqrt[:, i, :])
+            x_sigma.append(mu + varsqrt[:, i])
 
         for i in range(N):
-            x_sigma.append(mu - varsqrt[:, i, :])
+            x_sigma.append(mu - varsqrt[:, i])
 
         return x_sigma
     
@@ -170,7 +170,6 @@ class VAE(nn.Module):
             p_x_z = torch.exp(diff_x)
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
-            print(q_z_x)
             #q_z_x = torch.exp(self.norm_dist_exp(sample, mu_z, var_z))
             diff = diff_x + diff_z1 - diff_z2
             #diff = diff_x + diff_z1
@@ -354,6 +353,7 @@ def test(args, epoch):
             mu, logvar = model.encode(data.view(-1, 784))
             
             z1 = model.unscented(mu, logvar)
+            print(z1[0])
             """
             z2 = []
             #var = torch.exp(logvar)
