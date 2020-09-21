@@ -353,7 +353,7 @@ def test(args, epoch):
             mu, logvar = model.encode(data.view(-1, 784))
             
             z1 = model.unscented(mu, logvar)
-            print(z1[0])
+            print(z1.shape)
             """
             z2 = []
             #var = torch.exp(logvar)
