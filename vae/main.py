@@ -325,7 +325,7 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            print(torch.max(data)[0])
+            print(torch.max(data))
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
