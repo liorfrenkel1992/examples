@@ -98,10 +98,10 @@ class VAE(nn.Module):
         x_sigma = []
         
         for i in range(N):
-            x_sigma.append(mu + varsqrt[:, :, i])
+            x_sigma.append(mu + varsqrt[:, i, :])
 
         for i in range(N):
-            x_sigma.append(mu - varsqrt[:, :, i])
+            x_sigma.append(mu - varsqrt[:, i, :])
 
         return x_sigma
     
