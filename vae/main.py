@@ -137,7 +137,6 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
-        print(z[0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
@@ -149,6 +148,7 @@ class VAE(nn.Module):
                 #x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
+                print(z2_exp)
                 x_exps.append(x_exp.unsqueeze(-1))
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
@@ -199,7 +199,6 @@ class VAE(nn.Module):
         for i in range(num_samples):
             z.append(dist_z.sample())
         
-        print(z[0])
         K = len(z)       
         x_exps = []
         z1_exps = []
@@ -218,6 +217,7 @@ class VAE(nn.Module):
                 x_exp = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
+                print(z2_exp)
                 x_exps.append(x_exp.unsqueeze(-1))
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
