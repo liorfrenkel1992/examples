@@ -412,9 +412,9 @@ def test(args, epoch):
                 #save_image(comparison.cpu(),
                          #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
-    UT_loss /= len(test_loader.dataset)
-    reg_loss /= len(test_loader.dataset)
-    true_loss /= len(test_loader.dataset)
+    UT_loss /= (len(test_loader.dataset)*bs)
+    reg_loss /= (len(test_loader.dataset)*bs)
+    true_loss /= (len(test_loader.dataset)*bs)
     print('====> Test set loss with regular sampling: {:.4f}'.format(reg_loss))
     print('====> Test set loss with UT: {:.4f}'.format(UT_loss))
     print('====> True test set loss: {:.4f}'.format(true_loss))
