@@ -137,6 +137,7 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
+        print(z[0][0], z[1][0], z[2][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
@@ -158,7 +159,6 @@ class VAE(nn.Module):
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
-        print(z[0][0])
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -207,7 +207,7 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
-        print(z[0][0])
+
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
