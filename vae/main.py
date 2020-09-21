@@ -91,12 +91,12 @@ class VAE(nn.Module):
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         var = torch.exp(logvar)
-        print(var)
+        print(var[0])
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt(N*var_diag)
-        print(varsqrt)
+        print(varsqrt[0])
         x_sigma = []
         
         for i in range(N):
