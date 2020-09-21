@@ -26,7 +26,7 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-torch.manual_seed(args.seed)
+#torch.manual_seed(args.seed)
 
 device = torch.device("cuda" if args.cuda else "cpu")
 
@@ -420,10 +420,10 @@ def test(args, epoch):
     #print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
+    #for epoch in range(1, args.epochs + 1):
+    #    train(args, epoch)
     PATH = '/data/vae/results_regular.pth'
-    torch.save(model.state_dict(), PATH)
+    #torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
     """
