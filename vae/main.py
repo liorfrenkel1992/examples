@@ -54,7 +54,7 @@ class VAE(nn.Module):
 
     def encode(self, x):
         #h1 = F.relu(self.fc1(x))
-        h1 = F.tanh(self.fc1(x))
+        h1 = torch.tanh(self.fc1(x))
         return self.fc21(h1), torch.exp(self.fc22(h1))
         
     def reparameterize(self, mu, logvar):
@@ -63,7 +63,7 @@ class VAE(nn.Module):
         return mu + eps*std
 
     def decode(self, z, istrain=True):
-        h3 = F.tanh(self.fc3(z))
+        h3 = torch.tanh(self.fc3(z))
         return torch.sigmoid(self.fc4(h3))
         #return self.fc41(h3), self.fc42(h3)
       
