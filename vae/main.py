@@ -165,8 +165,7 @@ class VAE(nn.Module):
             #var_x = vars_x[inx]
             #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
             #p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
-            print(mu_x)
-            p_x_z = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1)
+            p_x_z = torch.exp(torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1))
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
             #diff = diff_x + diff_z1 - diff_z2
@@ -231,7 +230,7 @@ class VAE(nn.Module):
             mu_x = means_x[inx]
             #var_x = vars_x[inx]
             #p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
-            p_x_z = torch.sum(x*torch.log(mu_x) + (1 - x)*torch.log(1 - mu_x), dim=1)
+            p_x_z = torch.exp(torch.sum(x*torch.log(mu_x) + (1 - x)*torch.log(1 - mu_x), dim=1))
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
             #diff = diff_x + diff_z1 - diff_z2
