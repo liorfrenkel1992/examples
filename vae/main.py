@@ -95,6 +95,7 @@ class VAE(nn.Module):
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt(N*var_diag)
+        print(varsqrt[0])
         x_sigma = []
         
         for i in range(N):
@@ -151,8 +152,7 @@ class VAE(nn.Module):
                 x_exps.append(x_exp.unsqueeze(-1))
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
-        print(z[0])
-        print(z[1])
+        
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
         z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
