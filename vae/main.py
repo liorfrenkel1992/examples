@@ -394,7 +394,7 @@ def test(args, epoch):
 if __name__ == "__main__":
     #for epoch in range(1, args.epochs + 1):
         #train(args, epoch)
-    #PATH = '/data/vae/results_logp.pth'
+    PATH = '/data/vae/results_logp.pth'
     #torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
