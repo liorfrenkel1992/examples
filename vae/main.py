@@ -125,6 +125,7 @@ class VAE(nn.Module):
         #Sigma = self.batch_det(x, var)
         #sqrt_det = torch.sqrt(torch.det(Sigma))
         diff = exp_norm - max_x
+        print(diff)
         
         return torch.exp(diff), diff
     
@@ -159,7 +160,6 @@ class VAE(nn.Module):
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
-        print(z2_exps_max)
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -227,7 +227,6 @@ class VAE(nn.Module):
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
-        print(z2_exps_max)   
           
         pq_sum_tensor = torch.zeros(bs).to(device)
         
