@@ -170,6 +170,7 @@ class VAE(nn.Module):
             p_x_z = torch.exp(diff_x)
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
             q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
+            print(q_z_x)
             #q_z_x = torch.exp(self.norm_dist_exp(sample, mu_z, var_z))
             diff = diff_x + diff_z1 - diff_z2
             #diff = diff_x + diff_z1
