@@ -137,7 +137,10 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
-        print(z[0][0], z[1][0], z[2][0])
+        print(mu_z[0])
+        print(z[0][0])
+        print(z[1][0])
+        print(z[2][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
