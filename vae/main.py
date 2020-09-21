@@ -171,7 +171,7 @@ class VAE(nn.Module):
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_z1 - diff_z2
             pq_sum = (p_x_z*p_z)/q_z_x
-            print(pq_sum)
+            print(p_z)
             big_pq = torch.zeros_like(pq_sum).to(device)
             for i in range(bs):
                 if diff[i] >= -10:
