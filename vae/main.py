@@ -272,6 +272,8 @@ class VAE(nn.Module):
 model = VAE(args).to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
+def preprocess(data):
+    return torch.bernoulli(data)
 
 # Reconstruction + KL divergence losses summed over all elements and batch
 def loss_function(recon_x, x, mu, logvar):
@@ -291,7 +293,7 @@ def train(args, epoch, istrain=True):
     bs = args.batch_size
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
-        data = data.to(device)
+        data = preprocess(data).to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
         #mu, logvar = model.encode(data.view(-1, 784))
@@ -325,7 +327,6 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
-            print(torch.max(data))
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
