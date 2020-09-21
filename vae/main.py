@@ -53,8 +53,9 @@ class VAE(nn.Module):
         #self.fc42 = nn.Linear(400, 784)
 
     def encode(self, x):
-        h1 = F.relu(self.fc1(x))
-        return self.fc21(h1), self.fc22(h1)
+        #h1 = F.relu(self.fc1(x))
+        h1 = F.tanh(self.fc1(x))
+        return self.fc21(h1), torch.exp(self.fc22(h1))
         
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5*logvar)
@@ -62,7 +63,7 @@ class VAE(nn.Module):
         return mu + eps*std
 
     def decode(self, z, istrain=True):
-        h3 = F.relu(self.fc3(z))
+        h3 = F.tanh(self.fc3(x))
         return torch.sigmoid(self.fc4(h3))
         #return self.fc41(h3), self.fc42(h3)
       
@@ -254,19 +255,19 @@ class VAE(nn.Module):
   
 
     def forward(self, x):
-        mu, logvar = self.encode(x.view(-1, 784))
+        mu, var = self.encode(x.view(-1, 784))
         #z = self.reparameterize(mu, logvar)
         #z = self.unscented(mu, logvar)
         
         bs = x.shape[0]
-        var = torch.exp(logvar)
+        #var = torch.exp(logvar)
         Sigma = self.batch_diag(mu, var)
         
         dist_z = MultivariateNormal(mu, Sigma)
         z = dist_z.sample()
         
         recon_x = self.decode(z)
-        return recon_x, mu, logvar
+        return recon_x, mu, var
 
 
 model = VAE(args).to(device)
@@ -276,14 +277,14 @@ def preprocess(data):
     return torch.bernoulli(data)
 
 # Reconstruction + KL divergence losses summed over all elements and batch
-def loss_function(recon_x, x, mu, logvar):
+def loss_function(recon_x, x, mu, var):
     BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
 
     # see Appendix B from VAE paper:
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
     # https://arxiv.org/abs/1312.6114
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    KLD = -0.5 * torch.sum(1 + torch.log(var) - mu.pow(2) - var)
 
     return BCE + KLD
     
@@ -295,11 +296,11 @@ def train(args, epoch, istrain=True):
     for batch_idx, (data, _) in enumerate(train_loader):
         data = preprocess(data).to(device)
         optimizer.zero_grad()
-        recon_batch, mu, logvar = model(data)
+        recon_batch, mu, var = model(data)
         #mu, logvar = model.encode(data.view(-1, 784))
         #z = model.unscented(mu, logvar)
         #loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1]))
-        loss = loss_function(recon_batch, data, mu, logvar)
+        loss = loss_function(recon_batch, data, mu, var)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -328,11 +329,11 @@ def test(args, epoch):
         for i, (data, _) in enumerate(test_loader):
             data = preprocess(data).to(device)            
             #recon_batch, mu, logvar = model(data)
-            mu, logvar = model.encode(data.view(-1, 784))
-            z1 = model.unscented(mu, logvar)
+            mu, var = model.encode(data.view(-1, 784))
+            z1 = model.unscented(mu, var)
             
             z2 = []
-            var = torch.exp(logvar)
+            #var = torch.exp(logvar)
             Sigma = model.batch_diag(mu, var)
             dist_z = MultivariateNormal(mu, Sigma)
             for j in range(2*mu.shape[1]):
@@ -340,14 +341,14 @@ def test(args, epoch):
             
             for inx1, sample1 in enumerate(z1):
                 recon_batch1 = model.decode(sample1)
-                UT_test_loss += loss_function(recon_batch1, data, mu, logvar).item()
+                UT_test_loss += loss_function(recon_batch1, data, mu, var).item()
             UT_test_loss /= len(z1)
             UT_loss += UT_test_loss
             print('UT loss: ', UT_test_loss/args.batch_size)
             UT_test_loss = 0
             for inx2, sample2 in enumerate(z2):
                 recon_batch2 = model.decode(sample2)
-                reg_test_loss += loss_function(recon_batch2, data, mu, logvar).item()
+                reg_test_loss += loss_function(recon_batch2, data, mu, var).item()
             reg_test_loss /= len(z2)
             reg_loss += reg_test_loss
             print('regular sampling loss: ', reg_test_loss/args.batch_size)
@@ -358,7 +359,7 @@ def test(args, epoch):
                 z3.append(dist_z.sample())
             for inx3, sample3 in enumerate(z3):
                 recon_batch3 = model.decode(sample3)
-                true_test_loss += loss_function(recon_batch3, data, mu, logvar).item()
+                true_test_loss += loss_function(recon_batch3, data, mu, var).item()
             true_test_loss /= len(z3)
             true_loss += true_test_loss
             print('true sampling loss: ', true_test_loss/args.batch_size)
