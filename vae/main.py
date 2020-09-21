@@ -186,7 +186,8 @@ class VAE(nn.Module):
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
+        return -(x_exps_max + z1_exps_max + torch.log((1/K)*pq_sum_tensor))
+        #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
     
