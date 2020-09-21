@@ -284,8 +284,8 @@ def loss_function(recon_x, x, mu, logvar):
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
     return BCE + KLD
-
-
+    
+  
 def train(args, epoch, istrain=True):
     model.train()
     bs = args.batch_size
@@ -325,6 +325,7 @@ def test(args, epoch):
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
+            print(data)
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
@@ -383,11 +384,6 @@ def test(args, epoch):
                 #save_image(comparison.cpu(),
                          #'results/reconstruction_' + str(epoch) + '.png', nrow=n)
 
-    """
-    UT_loss = torch.sum(UT_loss).item()
-    reg_loss = torch.sum(reg_loss).item()
-    true_loss = torch.sum(true_loss).item()
-    """
     UT_loss /= len(test_loader.dataset)
     reg_loss /= len(test_loader.dataset)
     true_loss /= len(test_loader.dataset)
@@ -396,10 +392,10 @@ def test(args, epoch):
     print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
-    PATH = '/data/vae/results_logp.pth'
-    torch.save(model.state_dict(), PATH)
+    #for epoch in range(1, args.epochs + 1):
+        #train(args, epoch)
+    #PATH = '/data/vae/results_logp.pth'
+    #torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
     """
