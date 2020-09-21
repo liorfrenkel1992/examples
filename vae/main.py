@@ -326,7 +326,7 @@ def test(args, epoch):
     reg_test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
-            data = data.to(device)
+            data = preprocess(data).to(device)            
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             z1 = model.unscented(mu, logvar)
@@ -393,10 +393,10 @@ def test(args, epoch):
     print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    #for epoch in range(1, args.epochs + 1):
-        #train(args, epoch)
+    for epoch in range(1, args.epochs + 1):
+        train(args, epoch)
     PATH = '/data/vae/results_regular.pth'
-    #torch.save(model.state_dict(), PATH)
+    torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
     """
