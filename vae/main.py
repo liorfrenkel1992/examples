@@ -91,20 +91,18 @@ class VAE(nn.Module):
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         var = torch.exp(logvar)
-        print(var[0])
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt(N*var_diag)
-        print(varsqrt[0][0], varsqrt[0][1], varsqrt[0][2])
         x_sigma = []
         
         for i in range(N):
-            x_sigma.append(mu + varsqrt[:, i])
+            x_sigma.append(mu + varsqrt[:][i])
 
         for i in range(N):
-            x_sigma.append(mu - varsqrt[:, i])
-
+            x_sigma.append(mu - varsqrt[:][i])
+        
         return x_sigma
     
     def batch_diag(self, x, var):
