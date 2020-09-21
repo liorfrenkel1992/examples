@@ -137,6 +137,7 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
+        print(z[0][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
@@ -207,6 +208,7 @@ class VAE(nn.Module):
         means_x = []
         #vars_x = []
         
+        print(z[0][0])
         with torch.no_grad():
             for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
@@ -353,7 +355,6 @@ def test(args, epoch):
             mu, logvar = model.encode(data.view(-1, 784))
             
             z1 = model.unscented(mu, logvar)
-            print(z1[0].shape)
             """
             z2 = []
             #var = torch.exp(logvar)
