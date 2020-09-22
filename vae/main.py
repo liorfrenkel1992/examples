@@ -88,8 +88,8 @@ class VAE(nn.Module):
         bs = mu.shape[0]
         N = mu.shape[1]
         lam = 3 - N 
-        omega0 = lam/(N + lam)
-        omega1 = 1/(2*(N + lam))
+        w0 = lam/(N + lam)
+        w1 = 1/(2*(N + lam))
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         var = torch.exp(logvar)
@@ -106,7 +106,7 @@ class VAE(nn.Module):
         for i in range(N):
             x_sigma.append(mu - varsqrt[:, i])
         
-        return x_sigma
+        return x_sigma, w0, w1
     
     def batch_diag(self, x, var):
         k = x.shape[1]
@@ -131,52 +131,67 @@ class VAE(nn.Module):
         
         return torch.exp(diff), diff
     
-    def UT_sample_loss(self, x, z, mu_z, logvar_z):
+    def UT_sample_loss(self, x, z, mu_z, logvar_z, w0, w1):
         K = len(z)       
         bs = x.shape[0]
         var_z = torch.exp(logvar_z)
         x_exps = []
         z1_exps = []
         z2_exps = []
+        w1_exps = []
         means_x = []
         #vars_x = []
         with torch.no_grad():
-            for sample in z:
+            for sample in z[1:]:
                 #mu_x, logvar_x = self.decode(sample)
                 mu_x = self.decode(sample)
                 #var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
                 #vars_x.append(var_x)
+                w1_exp = torch.log(w1)
                 x_exp = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1)
                 #x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
+                w1_exps.append(w1_exp.unsqueeze(-1))
                 x_exps.append(x_exp.unsqueeze(-1))
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
         
+        w1_exps_tensor = torch.cat(w1_exps, dim=1).to(device)
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
         z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
+        w1_exps_max = torch.max(w1_exps_tensor, dim=1)[0]
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
-        for inx, sample in enumerate(z):
+        mu_x0 = self.decode(mu_z)
+        w0_exp = torch.log(-w0)
+        p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
+        p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+        q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
+        x0 = w0_exp + p_x_z0 + p_z0 - q_z_x0
+        
+        for inx, sample in enumerate(z[1:]):
             mu_x = means_x[inx]
             #var_x = vars_x[inx]
             #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
             #p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
             diff_x = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1) - x_exps_max
-            p_x_z = torch.exp(diff_x)
-            p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
+            diff_w1 = torch.log(w1) - w1_exps_max
+            w1_sum = diff_w1
+            p_x_z = diff_x
+            p_z, diff_z1 = torch.log(self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max))
             #q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
-            q_z_x = torch.exp(self.norm_dist_exp(sample, mu_z, var_z))
+            q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
             #diff = diff_x + diff_z1 - diff_z2
-            diff = diff_x + diff_z1
-            pq_sum = (p_x_z*p_z)/q_z_x
+            diff = diff_w1 + diff_x + diff_z1
+            y = w1_sum + p_x_z + p_z - q_z_x
+            pq_sum = torch.exp(y - x0) - 1 
             #big_pq = torch.zeros_like(pq_sum).to(device)
             #for i in range(bs):
             #    if diff[i] >= -10:
@@ -189,7 +204,7 @@ class VAE(nn.Module):
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(x_exps_max + z1_exps_max + torch.log((1/K)*pq_sum_tensor))
+        return -(w1_exps_max + x_exps_max + z1_exps_max + x0 + torch.log(pq_sum_tensor))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
@@ -358,7 +373,7 @@ def test(args, epoch):
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             
-            z1 = model.unscented(mu, logvar)
+            z1, w0, w1 = model.unscented(mu, logvar)
             """
             z2 = []
             #var = torch.exp(logvar)
@@ -394,11 +409,11 @@ def test(args, epoch):
             true_test_loss = 0
             """
             
-            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar)).item()
+            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar, w0, w1)).item()
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
-            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
+            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1] + 1)).item()
             reg_loss += reg_test_loss
             print('regular sampling score: ', reg_test_loss)
             reg_test_loss = 0
