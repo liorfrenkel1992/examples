@@ -188,7 +188,8 @@ class VAE(nn.Module):
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_x + diff_z1
             y = w1_exp + p_x_z + p_z - q_z_x
-            pq_sum = torch.exp(y - x0) - 1 
+            pq_sum = torch.exp(y) 
+            #pq_sum = torch.exp(y - x0) - 1 
             #big_pq = torch.zeros_like(pq_sum).to(device)
             #for i in range(bs):
             #    if diff[i] >= -10:
@@ -196,13 +197,12 @@ class VAE(nn.Module):
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
         
-        print(y-x0)
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(x_exps_max + z1_exps_max + x0 + torch.log(pq_sum_tensor))
+        return -(x_exps_max + z1_exps_max + torch.log(pq_sum_tensor))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
