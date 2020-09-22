@@ -90,6 +90,7 @@ class VAE(nn.Module):
         lam = 3 - N 
         omega0 = lam/(N + lam)
         omega1 = 1/(2*(N + lam))
+        print(omega1)
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         var = torch.exp(logvar)
@@ -98,7 +99,6 @@ class VAE(nn.Module):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt((N + lam)*var_diag)
         x_sigma = []
-        print(omega0*mu)
         x_sigma.append(omega0*mu)
         
         for i in range(N):
