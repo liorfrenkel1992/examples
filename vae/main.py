@@ -87,7 +87,7 @@ class VAE(nn.Module):
         #form 2N sigma points used for taking the unscented transform.
         bs = mu.shape[0]
         N = mu.shape[1]
-        lam = 5 - N 
+        lam = 3 - N 
         omega0 = lam/(N + lam)
         omega1 = 1/(2*(N + lam))
         #scale = 1.0
@@ -98,6 +98,7 @@ class VAE(nn.Module):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt((N + lam)*var_diag)
         x_sigma = []
+        print(omega0*mu)
         x_sigma.append(omega0*mu)
         
         for i in range(N):
