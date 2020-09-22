@@ -141,6 +141,7 @@ class VAE(nn.Module):
         w1_exps = []
         means_x = []
         #vars_x = []
+        yi = []
         w1_exp = math.log(w1)
         with torch.no_grad():
             for sample in z[1:]:
@@ -153,16 +154,21 @@ class VAE(nn.Module):
                 #x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
-                x_exps.append(x_exp.unsqueeze(-1))
-                z1_exps.append(z1_exp.unsqueeze(-1))
-                z2_exps.append(z2_exp.unsqueeze(-1))
+                yi.append((w1_exp + x_exp + z1_exp - z2_exp).unsqueeze(-1))
+                #x_exps.append(x_exp.unsqueeze(-1))
+                #z1_exps.append(z1_exp.unsqueeze(-1))
+                #z2_exps.append(z2_exp.unsqueeze(-1))
         
+        """
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
         z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
+        """
+        yi_tensor = torch.cat(yi, dim=1).to(device)
+        yi_max = torch.max(yi_tensor, dim=1)[0]
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -171,14 +177,22 @@ class VAE(nn.Module):
         p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
         p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
-        x0 = w0_exp + p_x_z0 + p_z0 - q_z_x0 - x_exps_max - z1_exps_max
+        x0 = w0_exp + p_x_z0 + p_z0 - q_z_x0
         
+        y_sum = torch.zeros(bs).to(device)
+        for log_yi in yi:
+            y_sum += torch.exp(log_yi - yi_max)
+        y = yi_max + torch.log(y_sum)
         
+        """
         for inx, sample in enumerate(z[1:]):
             mu_x = means_x[inx]
             #var_x = vars_x[inx]
             #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
             #p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
+            x_exp = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1)
+            z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+            z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
             diff_x = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1) - x_exps_max
             p_x_z = diff_x
             p_z, diff_z1 = self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max)
@@ -196,13 +210,13 @@ class VAE(nn.Module):
             #        big_pq[i] = pq_sum[i]
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
-            
+        """ 
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(x_exps_max + z1_exps_max + x0 + torch.log(pq_sum_tensor - 1))
+        return -(torch.log(torch.exp(y) - torch.exp(x0)))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
