@@ -181,7 +181,7 @@ class VAE(nn.Module):
         
         y_sum = torch.zeros(bs).to(device)
         for log_yi in yi:
-            y_sum += torch.exp(log_yi.unsqueeze(-1) - yi_max)
+            y_sum += torch.exp(log_yi.squeeze() - yi_max)
         y = yi_max + torch.log(y_sum)
         
         """
