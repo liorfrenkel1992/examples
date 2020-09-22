@@ -98,13 +98,13 @@ class VAE(nn.Module):
             var_diag[i, :] = torch.diag(var[i, :])
         varsqrt = torch.sqrt((N + lam)*var_diag)
         x_sigma = []
-        x_sigma.append(mu)
+        x_sigma.append(omega0*mu)
         
         for i in range(N):
-            x_sigma.append(mu + varsqrt[:, i])
+            x_sigma.append(omega1*(mu + varsqrt[:, i]))
 
         for i in range(N):
-            x_sigma.append(mu - varsqrt[:, i])
+            x_sigma.append(omega1*(mu - varsqrt[:, i]))
         
         return x_sigma
     
