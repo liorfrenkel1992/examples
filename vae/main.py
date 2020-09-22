@@ -187,7 +187,7 @@ class VAE(nn.Module):
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_x + diff_z1
             y = w1_exp + p_x_z + p_z - q_z_x
-            print(y)
+            print(y-x0)
             pq_sum = torch.exp(y - x0) - 1 
             #big_pq = torch.zeros_like(pq_sum).to(device)
             #for i in range(bs):
