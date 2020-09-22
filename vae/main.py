@@ -173,6 +173,7 @@ class VAE(nn.Module):
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
         x0 = w0_exp + p_x_z0 + p_z0 - q_z_x0
         
+        
         for inx, sample in enumerate(z[1:]):
             mu_x = means_x[inx]
             #var_x = vars_x[inx]
@@ -187,7 +188,6 @@ class VAE(nn.Module):
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_x + diff_z1
             y = w1_exp + p_x_z + p_z - q_z_x
-            print(y-x0)
             pq_sum = torch.exp(y - x0) - 1 
             #big_pq = torch.zeros_like(pq_sum).to(device)
             #for i in range(bs):
@@ -195,7 +195,8 @@ class VAE(nn.Module):
             #        big_pq[i] = pq_sum[i]
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
-            
+        
+        print(y-x0)
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
