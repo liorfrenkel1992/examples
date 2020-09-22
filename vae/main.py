@@ -168,9 +168,7 @@ class VAE(nn.Module):
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
         """
         yi_tensor = torch.cat(yi, dim=1).to(device)
-        print(yi_tensor.shape)
         yi_max = torch.max(yi_tensor, dim=1)[0]
-        print(yi_max.shape)
         
         pq_sum_tensor = torch.zeros(bs).to(device)
         
@@ -183,7 +181,7 @@ class VAE(nn.Module):
         
         y_sum = torch.zeros(bs).to(device)
         for log_yi in yi:
-            y_sum += torch.exp(log_yi - yi_max)
+            y_sum += torch.exp(log_yi.unsqueeze(-1) - yi_max)
         y = yi_max + torch.log(y_sum)
         
         """
