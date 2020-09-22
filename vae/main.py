@@ -237,6 +237,7 @@ class VAE(nn.Module):
         z2_exps = []
         means_x = []
         #vars_x = []
+        yi = []
 
         with torch.no_grad():
             for sample in z:
@@ -249,19 +250,29 @@ class VAE(nn.Module):
                 x_exp = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
-                x_exps.append(x_exp.unsqueeze(-1))
-                z1_exps.append(z1_exp.unsqueeze(-1))
-                z2_exps.append(z2_exp.unsqueeze(-1))
+                yi.append((x_exp + z1_exp - z2_exp))
+                #x_exps.append(x_exp.unsqueeze(-1))
+                #z1_exps.append(z1_exp.unsqueeze(-1))
+                #z2_exps.append(z2_exp.unsqueeze(-1))
         
+        
+        """
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
         z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
-          
+        """
+        yi_tensor = torch.cat(yi, dim=1).to(device)
+        yi_max = torch.max(yi_tensor, dim=1)[0]
+        
         pq_sum_tensor = torch.zeros(bs).to(device)
         
+        y_sum = torch.zeros(bs).to(device)
+        for log_yi in yi:
+            y_sum += torch.exp(log_yi.squeeze() - yi_max)
+        """
         for inx, sample in enumerate(z):
             mu_x = means_x[inx]
             #var_x = vars_x[inx]
@@ -280,14 +291,16 @@ class VAE(nn.Module):
             #        big_pq[i] = pq_sum[i]
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
-            
+        """
+        
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
             
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
-        return -(x_exps_max + z1_exps_max + torch.log((1/K)*pq_sum_tensor))
+        #return -(x_exps_max + z1_exps_max + torch.log((1/K)*pq_sum_tensor))
+        return -(yi_max + torch.log(y_sum))
         
 
         
