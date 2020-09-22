@@ -85,17 +85,20 @@ class VAE(nn.Module):
     def unscented(self, mu, logvar):
         #For a vector mu of length N with covariance matrix logvar,
         #form 2N sigma points used for taking the unscented transform.
-        #mu = mu.view(-1) # Force shape
         bs = mu.shape[0]
         N = mu.shape[1]
+        lambda = 3 - N 
+        omega0 = lambda/(N + lambda)
+        omega1 = 1/(2*(N + lambda))
         #scale = 1.0
         #varsqrt = scale * self.svdsqrtm(N * logvar)
         var = torch.exp(logvar)
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
-        varsqrt = torch.sqrt(N*var_diag)
+        varsqrt = torch.sqrt((N + lambda)*var_diag)
         x_sigma = []
+        x_sigma.append(mu)
         
         for i in range(N):
             x_sigma.append(mu + varsqrt[:, i])
