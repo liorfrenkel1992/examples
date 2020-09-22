@@ -196,15 +196,15 @@ class VAE(nn.Module):
             #        big_pq[i] = pq_sum[i]
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
-            print((y-w1_exp)[0])
+            print((y)[0])
         
-        print((x0-w0_exp)[0])
+        print((x0)[0])
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(x_exps_max + z1_exps_max + torch.log(pq_sum_tensor))
+        return -(x_exps_max + z1_exps_max + x0 + torch.log(pq_sum_tensor))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
