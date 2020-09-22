@@ -196,8 +196,9 @@ class VAE(nn.Module):
             #        big_pq[i] = pq_sum[i]
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
+            print((y- w1_exp)[0])
         
-        print(y- w1_exp)
+        print((x0 - w0_exp)[0])
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
