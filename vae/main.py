@@ -440,7 +440,7 @@ def test(args, epoch):
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
-            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1] + 1)).item()
+            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
             reg_loss += reg_test_loss
             print('regular sampling score: ', reg_test_loss)
             reg_test_loss = 0
