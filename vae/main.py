@@ -96,9 +96,10 @@ class VAE(nn.Module):
         var_diag = torch.zeros(bs, N, N).to(device)
         for i in range(var.shape[0]):
             var_diag[i, :] = torch.diag(var[i, :])
-        varsqrt = torch.sqrt((N + lam)*var_diag)
+        #varsqrt = torch.sqrt((N + lam)*var_diag)
+        varsqrt = torch.sqrt(N*var_diag)
         x_sigma = []
-        x_sigma.append(mu)
+        #x_sigma.append(mu)
         
         for i in range(N):
             x_sigma.append(mu + varsqrt[:, i])
@@ -144,7 +145,7 @@ class VAE(nn.Module):
         yi = []
         w1_exp = math.log(w1)
         with torch.no_grad():
-            for sample in z[1:]:
+            for sample in z:
                 #mu_x, logvar_x = self.decode(sample)
                 mu_x = self.decode(sample)
                 #var_x = torch.exp(logvar_x)
@@ -154,7 +155,7 @@ class VAE(nn.Module):
                 #x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
-                yi.append((w1_exp + x_exp + z1_exp - z2_exp).unsqueeze(-1))
+                yi.append((x_exp + z1_exp - z2_exp).unsqueeze(-1))
                 #x_exps.append(x_exp.unsqueeze(-1))
                 #z1_exps.append(z1_exp.unsqueeze(-1))
                 #z2_exps.append(z2_exp.unsqueeze(-1))
@@ -182,7 +183,7 @@ class VAE(nn.Module):
         y_sum = torch.zeros(bs).to(device)
         for log_yi in yi:
             y_sum += torch.exp(log_yi.squeeze() - yi_max)
-        y = torch.log(y_sum)
+        #y = torch.log(y_sum)
         
         """
         for inx, sample in enumerate(z[1:]):
@@ -216,7 +217,8 @@ class VAE(nn.Module):
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(yi_max + torch.log(torch.exp(y) - torch.exp(x0 - yi_max)))
+        return -(yi_max + torch.log(y_sum))
+        #return -(yi_max + torch.log(torch.exp(y) - torch.exp(x0 - yi_max)))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
