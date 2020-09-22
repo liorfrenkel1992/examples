@@ -87,7 +87,7 @@ class VAE(nn.Module):
         #form 2N sigma points used for taking the unscented transform.
         bs = mu.shape[0]
         N = mu.shape[1]
-        lam = 3 - N 
+        lam = 5 - N 
         omega0 = lam/(N + lam)
         omega1 = 1/(2*(N + lam))
         #scale = 1.0
