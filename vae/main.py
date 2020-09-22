@@ -141,6 +141,7 @@ class VAE(nn.Module):
         w1_exps = []
         means_x = []
         #vars_x = []
+        w1_exp = math.log(w1)
         with torch.no_grad():
             for sample in z[1:]:
                 #mu_x, logvar_x = self.decode(sample)
@@ -148,21 +149,17 @@ class VAE(nn.Module):
                 #var_x = torch.exp(logvar_x)
                 means_x.append(mu_x)
                 #vars_x.append(var_x)
-                w1_exp = torch.log(w1)
                 x_exp = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1)
                 #x_exp = self.norm_dist_exp(x, mu_x, var_x)
                 z1_exp = self.norm_dist_exp(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
                 z2_exp = self.norm_dist_exp(sample, mu_z, var_z)
-                w1_exps.append(w1_exp.unsqueeze(-1))
                 x_exps.append(x_exp.unsqueeze(-1))
                 z1_exps.append(z1_exp.unsqueeze(-1))
                 z2_exps.append(z2_exp.unsqueeze(-1))
         
-        w1_exps_tensor = torch.cat(w1_exps, dim=1).to(device)
         x_exps_tensor = torch.cat(x_exps, dim=1).to(device)
         z1_exps_tensor = torch.cat(z1_exps, dim=1).to(device)
         z2_exps_tensor = torch.cat(z2_exps, dim=1).to(device)
-        w1_exps_max = torch.max(w1_exps_tensor, dim=1)[0]
         x_exps_max = torch.max(x_exps_tensor, dim=1)[0]
         z1_exps_max = torch.max(z1_exps_tensor, dim=1)[0]
         z2_exps_max = torch.max(z2_exps_tensor, dim=1)[0]
@@ -170,7 +167,7 @@ class VAE(nn.Module):
         pq_sum_tensor = torch.zeros(bs).to(device)
         
         mu_x0 = self.decode(mu_z)
-        w0_exp = torch.log(-w0)
+        w0_exp = math.log(-w0)
         p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
         p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
@@ -182,15 +179,13 @@ class VAE(nn.Module):
             #q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
             #p_x_z, diff_x = self.norm_dist(x, mu_x, var_x, x_exps_max)
             diff_x = torch.sum(x * torch.log(mu_x) + (1 - x) * torch.log(1 - mu_x), dim=1) - x_exps_max
-            diff_w1 = torch.log(w1) - w1_exps_max
-            w1_sum = diff_w1
             p_x_z = diff_x
             p_z, diff_z1 = torch.log(self.norm_dist(sample, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device), z1_exps_max))
             #q_z_x, diff_z2 = self.norm_dist(sample, mu_z, var_z, z2_exps_max)
             q_z_x = self.norm_dist_exp(sample, mu_z, var_z)
             #diff = diff_x + diff_z1 - diff_z2
             diff = diff_w1 + diff_x + diff_z1
-            y = w1_sum + p_x_z + p_z - q_z_x
+            y = w1_exp + p_x_z + p_z - q_z_x
             pq_sum = torch.exp(y - x0) - 1 
             #big_pq = torch.zeros_like(pq_sum).to(device)
             #for i in range(bs):
