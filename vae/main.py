@@ -182,7 +182,7 @@ class VAE(nn.Module):
         y_sum = torch.zeros(bs).to(device)
         for log_yi in yi:
             y_sum += torch.exp(log_yi.squeeze() - yi_max)
-        y = yi_max + torch.log(y_sum)
+        y = torch.log(y_sum)
         
         """
         for inx, sample in enumerate(z[1:]):
@@ -216,7 +216,7 @@ class VAE(nn.Module):
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
         #D = (1/2)*(torch.sum(logvar_z, dim=1) + logvar_z.shape[1])
         
-        return -(torch.log(torch.exp(y) - torch.exp(x0)))
+        return -(yi_max + torch.log(torch.exp(y) - torch.exp(x0 - yi_max)))
         #return -(x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return -(C + x_exps_max + z1_exps_max - z2_exps_max + torch.log((1/K)*pq_sum_tensor))
         #return C + D + x_exps_max + z_exps_max + torch.log((1/K)*pq_sum_tensor)
