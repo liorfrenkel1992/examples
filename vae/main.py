@@ -171,7 +171,7 @@ class VAE(nn.Module):
         p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
         p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
-        x0 = w0_exp + p_x_z0 + p_z0 - q_z_x0
+        x0 = w0_exp + p_x_z0 + p_z0 - q_z_x0 - x_exps_max - z1_exps_max
         
         
         for inx, sample in enumerate(z[1:]):
@@ -189,16 +189,16 @@ class VAE(nn.Module):
             diff = diff_x + diff_z1
             y = w1_exp + p_x_z + p_z - q_z_x
             pq_sum = torch.exp(y)
-            #pq_sum = torch.exp(y - x0) - 1 
+            pq_sum = torch.exp(y - x0) - 1 
             #big_pq = torch.zeros_like(pq_sum).to(device)
             #for i in range(bs):
             #    if diff[i] >= -10:
             #        big_pq[i] = pq_sum[i]
             #pq_sum_tensor += big_pq
             pq_sum_tensor += pq_sum
-            print((p_x_z)[0])
+            print((y-w1_exp)[0])
         
-        print((p_x_z0)[0])
+        print((x0-w0_exp)[0])
         #C = torch.ones(bs).to(device)
         #C.new_full((bs,), (-(x.shape[1])/2)*math.log(2*math.pi))
         #C = (-x.shape[1]/2)*math.log(2*math.pi)
