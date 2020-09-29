@@ -146,7 +146,7 @@ class VAE(nn.Module):
         """
         Sigma_x = self.batch_diag(x, var_z)
         log1 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
-        log2 = -(1/2)*torch.squeeze(torch.bmm(torch.transpose(mu_z).unsqueeze(-1), 1, 2), mu_z))
+        log2 = -(1/2)*torch.squeeze(torch.bmm(torch.transpose(mu_z.unsqueeze(-1), 1, 2), mu_z))
         log3 = -(1/2)*torch.squeeze(torch.sum(torch.log(var_z), dim=1))
         x0 = log1 + log2 - log3
         
