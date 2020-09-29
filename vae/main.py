@@ -133,6 +133,20 @@ class VAE(nn.Module):
         
         return torch.exp(diff), diff
     
+    def UT_sample_loss_mu(self, x, mu_z, logvar_z):
+        bs = x.shape[0]
+        var_z = torch.exp(logvar_z)
+        
+        pq_sum_tensor = torch.zeros(bs).to(device)
+        
+        mu_x0 = self.decode(mu_z)
+        p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
+        p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+        q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
+        x0 = p_x_z0 + p_z0 - q_z_x0
+        
+        return -x0
+    
     def UT_sample_loss(self, x, z, mu_z, logvar_z, w0, w1):
         K = len(z)       
         bs = x.shape[0]
@@ -437,7 +451,11 @@ def test(args, epoch):
             true_test_loss = 0
             """
             
-            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar, w0, w1)).item()
+            #UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar, w0, w1)).item()
+            #UT_loss += UT_test_loss
+            #print('UT score: ', UT_test_loss)
+            #UT_test_loss = 0
+            UT_test_loss = (1/bs)*torch.sum(UT_sample_loss_mu(data.view(-1, 784), mu, logvar)).item()
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
