@@ -144,6 +144,7 @@ class VAE(nn.Module):
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
         x0 = p_x_z0 + p_z0 - q_z_x0
         """
+        print(mu_z.shape)
         log1 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
         log2 = -(1/2)*torch.squeeze(torch.bmm(torch.transpose(mu_z.unsqueeze(-1), 1, 2), mu_z))
         log3 = -(1/2)*torch.squeeze(torch.sum(torch.log(var_z), dim=1))
