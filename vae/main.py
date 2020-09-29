@@ -141,7 +141,7 @@ class VAE(nn.Module):
         
         mu_x0 = self.decode(mu_z)
         p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
-        p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, sample.shape[1]).to(device), torch.ones(bs, sample.shape[1]).to(device))
+        p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, mu_z.shape[1]).to(device), torch.ones(bs, mu_z.shape[1]).to(device))
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
         x0 = p_x_z0 + p_z0 - q_z_x0
         
@@ -484,10 +484,10 @@ def test(args, epoch):
     print('====> True test set loss: {:.4f}'.format(true_loss))
 
 if __name__ == "__main__":
-    for epoch in range(1, args.epochs + 1):
-        train(args, epoch)
+    #for epoch in range(1, args.epochs + 1):
+        #train(args, epoch)
     PATH = '/data/vae/results_regular.pth'
-    torch.save(model.state_dict(), PATH)
+    #torch.save(model.state_dict(), PATH)
     model.load_state_dict(torch.load(PATH))
     test(args, 10)
     """
