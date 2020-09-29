@@ -24,8 +24,8 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
 args = parser.parse_args()
-#args.cuda = not args.no_cuda and torch.cuda.is_available()
-args.cuda = False
+args.cuda = not args.no_cuda and torch.cuda.is_available()
+#args.cuda = False
 
 torch.manual_seed(args.seed)
 
@@ -376,8 +376,8 @@ def train(args, epoch, istrain=True):
     bs = args.batch_size
     train_loss = 0
     for batch_idx, (data, _) in enumerate(train_loader):
-        #data = preprocess(data).to(device)
-        data = data.to(device)
+        data = preprocess(data).to(device)
+        #data = data.to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
         #mu, logvar = model.encode(data.view(-1, 784))
@@ -410,8 +410,8 @@ def test(args, epoch):
     reg_test_loss = 0
     with torch.no_grad():
         for i, (data, _) in enumerate(test_loader):
-            #data = preprocess(data).to(device)
-            data = data.to(device)
+            data = preprocess(data).to(device)
+            #data = data.to(device)
             #recon_batch, mu, logvar = model(data)
             mu, logvar = model.encode(data.view(-1, 784))
             
