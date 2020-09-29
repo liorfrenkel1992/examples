@@ -455,7 +455,7 @@ def test(args, epoch):
             #UT_loss += UT_test_loss
             #print('UT score: ', UT_test_loss)
             #UT_test_loss = 0
-            UT_test_loss = (1/bs)*torch.sum(UT_sample_loss_mu(data.view(-1, 784), mu, logvar)).item()
+            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss_mu(data.view(-1, 784), mu, logvar)).item()
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
