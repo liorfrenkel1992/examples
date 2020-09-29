@@ -132,7 +132,7 @@ class VAE(nn.Module):
         diff = exp_norm - max_x
         
         return torch.exp(diff), diff
-    
+        
     def UT_sample_loss_mu(self, x, mu_z, logvar_z):
         bs = x.shape[0]
         var_z = torch.exp(logvar_z)
@@ -463,7 +463,7 @@ def test(args, epoch):
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
-            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 2*mu.shape[1])).item()
+            reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 1)).item()
             reg_loss += reg_test_loss
             print('regular sampling score: ', reg_test_loss)
             reg_test_loss = 0
