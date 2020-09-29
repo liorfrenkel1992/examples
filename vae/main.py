@@ -136,14 +136,19 @@ class VAE(nn.Module):
     def UT_sample_loss_mu(self, x, mu_z, logvar_z):
         bs = x.shape[0]
         var_z = torch.exp(logvar_z)
-        
-        pq_sum_tensor = torch.zeros(bs).to(device)
-        
+             
         mu_x0 = self.decode(mu_z)
+        """
         p_x_z0 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
         p_z0 = self.norm_dist_exp(mu_z, torch.zeros(bs, mu_z.shape[1]).to(device), torch.ones(bs, mu_z.shape[1]).to(device))
         q_z_x0 = self.norm_dist_exp(mu_z, mu_z, var_z)
         x0 = p_x_z0 + p_z0 - q_z_x0
+        """
+        Sigma_x = self.batch_diag(x, var_z)
+        log1 = torch.sum(x * torch.log(mu_x0) + (1 - x) * torch.log(1 - mu_x0), dim=1)
+        log2 = -(1/2)*torch.squeeze(torch.bmm(torch.transpose(mu_z).unsqueeze(-1), 1, 2), mu_z))
+        log3 = -(1/2)*torch.squeeze(torch.sum(torch.log(var_z), dim=1))
+        x0 = log1 + log2 - log3
         
         return -x0
     
