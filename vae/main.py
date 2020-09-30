@@ -455,14 +455,16 @@ def test(args, epoch):
             true_test_loss = 0
             """
             
-            #UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar, w0, w1)).item()
-            #UT_loss += UT_test_loss
-            #print('UT score: ', UT_test_loss)
-            #UT_test_loss = 0
+            UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss(data.view(-1, 784), z1, mu, logvar, w0, w1)).item()
+            UT_loss += UT_test_loss
+            print('UT score: ', UT_test_loss)
+            UT_test_loss = 0
+            """
             UT_test_loss = (1/bs)*torch.sum(model.UT_sample_loss_mu(data.view(-1, 784), mu, logvar)).item()
             UT_loss += UT_test_loss
             print('UT score: ', UT_test_loss)
             UT_test_loss = 0
+            """
             reg_test_loss = (1/bs)*torch.sum(model.sample_loss(data.view(-1, 784), mu, logvar, 1)).item()
             reg_loss += reg_test_loss
             print('regular sampling score: ', reg_test_loss)
